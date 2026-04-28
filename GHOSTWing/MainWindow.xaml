@@ -174,7 +174,7 @@
                     <TextBlock Name="txtBadgeVersion" Text="v1.0.0" Foreground="#B0B0B0" FontSize="16" FontWeight="Black"/>
                 </StackPanel>
             </Border>
-        </Grid>l>
+        </Grid>
 
         <!-- Main Card -->
         <Border Grid.Row="1" Background="#050505" CornerRadius="12" Padding="12" BorderBrush="#222222" BorderThickness="1">
@@ -271,7 +271,7 @@
                                     <TextBlock Text="STREAMER MODE" FontSize="10" FontWeight="Black" Foreground="#BBBBBB" HorizontalAlignment="Center" Margin="0,0,0,12"/>
                                     <ToggleButton Name="btnStreamerMode" Style="{StaticResource StreamerToggleStyle}" Click="btnStreamerMode_Click" HorizontalAlignment="Center" ToolTip="Enable full stealth (hides app content and taskbar icon)"/>
                                     <TextBlock Text="OFF / ON" FontSize="9" Foreground="#888888" Margin="0,8,0,0" HorizontalAlignment="Center"/>
-                                    
+
                                     <TextBlock Text="Hides app from" FontSize="9" Foreground="#AAAAAA" Margin="0,12,0,0" HorizontalAlignment="Center"/>
                                     <TextBlock Text="Capture &amp; Taskbar" FontSize="9" Foreground="#AAAAAA" HorizontalAlignment="Center"/>
                                 </StackPanel>
@@ -348,13 +348,13 @@
                                     <ColumnDefinition Width="90"/>
                                     <ColumnDefinition Width="*"/>
                                 </Grid.ColumnDefinitions>
-                                
+
                                 <StackPanel Grid.Column="0">
                                     <TextBlock Text="App name:" FontSize="11" Foreground="#B0B0B0" Margin="0,2"/>
                                     <TextBlock Text="Version:" FontSize="11" Foreground="#B0B0B0" Margin="0,2"/>
                                     <TextBlock Text="Status:" FontSize="11" Foreground="#B0B0B0" Margin="0,2"/>
                                 </StackPanel>
-                                
+
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Text="GHOSTWing Pro" FontSize="11" Foreground="#B0B0B0" FontWeight="SemiBold" Margin="0,2"/>
                                     <TextBlock Name="txtAppVersion" Text="1.0.0" FontSize="11" Foreground="#B0B0B0" FontWeight="SemiBold" Margin="0,2"/>
@@ -385,10 +385,7 @@
         <!-- Marquee Footer Section -->
         <Border Grid.Row="2" Background="#0A0A0A" BorderBrush="#222222" BorderThickness="0,1,0,0" Margin="-12,10,-12,-12" Padding="0,5">
             <Canvas Height="30" ClipToBounds="True" Background="Transparent">
-                <TextBlock Name="txtMarquee" 
-                           Text="GHOSTWing Produced by GHOST-404 | Checking for updates..." 
-                           FontSize="14" FontWeight="Bold" FontStyle="Italic" Foreground="#1DB954" 
-                           VerticalAlignment="Center">
+                <TextBlock Name="txtMarquee" Text="GHOSTWing Produced by GHOST-404 | Checking for updates..." FontSize="14" FontWeight="Bold" FontStyle="Italic" Foreground="#1DB954" VerticalAlignment="Center">
                     <TextBlock.RenderTransform>
                         <TranslateTransform x:Name="marqueeTransform" X="1200"/>
                     </TextBlock.RenderTransform>
@@ -396,11 +393,7 @@
                         <EventTrigger RoutedEvent="Loaded">
                             <BeginStoryboard>
                                 <Storyboard RepeatBehavior="Forever">
-                                    <DoubleAnimation 
-                                        Storyboard.TargetName="marqueeTransform"
-                                        Storyboard.TargetProperty="X"
-                                        From="1200" To="-1500" 
-                                        Duration="0:0:45"/>
+                                    <DoubleAnimation Storyboard.TargetName="marqueeTransform" Storyboard.TargetProperty="X" From="1200" To="-1500" Duration="0:0:45"/>
                                 </Storyboard>
                             </BeginStoryboard>
                         </EventTrigger>
