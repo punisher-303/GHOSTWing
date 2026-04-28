@@ -7,6 +7,8 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Interop;
+using System.Text.Json;
+using System.Diagnostics;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
 
 namespace GHOSTWing
