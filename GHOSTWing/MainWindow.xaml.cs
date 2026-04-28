@@ -170,18 +170,18 @@ namespace GHOSTWing
                         if (IsNewerVersion(latestVersion, AppVersion))
                         {
                             btnUpdateStatusTitle.Text = "UPDATE NOW";
-                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 0));
+                            btnUpdateStatusTitle.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#D32F2F") ?? System.Windows.Media.Brushes.Red;
                             txtUpdateStatus.Text = "Update available";
-                            txtUpdateStatus.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 0));
+                            txtUpdateStatus.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#1DB954") ?? System.Windows.Media.Brushes.Green;
                             
                             txtBadgeVersion.Text = "v" + latestVersion;
-                            txtBadgeVersion.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 0));
+                            txtBadgeVersion.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#1DB954") ?? System.Windows.Media.Brushes.Green;
                             txtBadgeArrow.Visibility = Visibility.Visible;
                         }
                         else
                         {
                             btnUpdateStatusTitle.Text = "LATEST";
-                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 0));
+                            btnUpdateStatusTitle.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#1DB954") ?? System.Windows.Media.Brushes.Green;
                             btnUpdateStatusTitle.Cursor = System.Windows.Input.Cursors.Arrow;
                             txtUpdateStatus.Text = "Using Latest version";
                         }
