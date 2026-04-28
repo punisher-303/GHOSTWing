@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Interop;
 using System.Text.Json;
 using System.Diagnostics;
+using System.IO;
 using Microsoft.Win32;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
 
@@ -165,8 +166,26 @@ namespace GHOSTWing
                     
                     using (JsonDocument doc = JsonDocument.Parse(json))
                     {
-                        string latestVersion = doc.RootElement.GetProperty("version").GetString() ?? AppVersion;
-                        downloadUrl = doc.RootElement.GetProperty("download_url").GetString() ?? downloadUrl;
+                        string latestVersion = doc.RootElement.TryGetProperty("version", out var v) ? v.GetString() ?? AppVersion : AppVersion;
+                        downloadUrl = doc.RootElement.TryGetProperty("download_url", out var d) ? d.GetString() ?? downloadUrl : downloadUrl;
+                        string footerText = doc.RootElement.TryGetProperty("footer_text", out var f) ? f.GetString() ?? "" : "";
+                        string footerColor = doc.RootElement.TryGetProperty("footer_color", out var fc) ? fc.GetString() ?? "" : "";
+
+                        if (!string.IsNullOrEmpty(footerText))
+                        {
+                            txtMarquee.Text = footerText;
+                        }
+                        
+                        if (!string.IsNullOrEmpty(footerColor))
+                        {
+                            try {
+                                string colorHex = footerColor.ToLower();
+                                if (colorHex == "red") colorHex = "#D32F2F";
+                                else if (colorHex == "green") colorHex = "#1DB954";
+                                
+                                txtMarquee.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom(colorHex) ?? txtMarquee.Foreground;
+                            } catch { }
+                        }
 
                         if (IsNewerVersion(latestVersion, AppVersion))
                         {
@@ -227,12 +246,12 @@ namespace GHOSTWing
             try
             {
                 string path = presetManager.GetFolderPath();
-                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+                if (!System.IO.Directory.Exists(path)) System.IO.Directory.CreateDirectory(path);
                 Process.Start("explorer.exe", path);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Could not open folder: " + ex.Message);
+                System.Windows.MessageBox.Show("Could not open folder: " + ex.Message);
             }
         }
 
@@ -240,12 +259,12 @@ namespace GHOSTWing
         {
             try
             {
-                OpenFileDialog openFileDialog = new OpenFileDialog();
+                Microsoft.Win32.OpenFileDialog openFileDialog = new Microsoft.Win32.OpenFileDialog();
                 openFileDialog.Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*";
                 
                 if (openFileDialog.ShowDialog() == true)
                 {
-                    string json = File.ReadAllText(openFileDialog.FileName);
+                    string json = System.IO.File.ReadAllText(openFileDialog.FileName);
                     
                     // Try to deserialize as a list or a single preset
                     List<RecoilPreset>? imported = null;
@@ -269,18 +288,19 @@ namespace GHOSTWing
                             count++;
                         }
                         
-                        LoadPresets(); // Refresh UI
-                        MessageBox.Show($"Successfully imported {count} preset(s)!");
+                        RefreshPresetCombo(); // Fixed method name
+                        RefreshPresetHotkeys();
+                        System.Windows.MessageBox.Show($"Successfully imported {count} preset(s)!");
                     }
                     else
                     {
-                        MessageBox.Show("Invalid preset file format.");
+                        System.Windows.MessageBox.Show("Invalid preset file format.");
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error importing preset: " + ex.Message);
+                System.Windows.MessageBox.Show("Error importing preset: " + ex.Message);
             }
         }
 
