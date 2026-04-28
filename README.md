@@ -1,53 +1,88 @@
-# GHOSTWing – Professional Anti-Recoil Controller
+# 🦅 GHOSTWing – Professional Anti-Recoil Controller
 
-![GHOSTWing UI](Screenshot.png)
+![Version](https://img.shields.io/badge/version-1.0.0-red?style=for-the-badge)
+![Platform](https://img.shields.io/badge/platform-Windows-blue?style=for-the-badge)
+![Framework](https://img.shields.io/badge/.NET-10.0-purple?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Production--Ready-success?style=for-the-badge)
 
-**GHOSTWing** is a high-precision, portable anti-recoil utility for Windows, designed for enthusiasts who need fine-tuned control over their mouse input. Built with .NET 10 and low-level Win32 APIs, it provides smooth, sub-pixel movement for perfect recoil compensation.
-
----
-
-## 🚀 Key Features
-
-- 🎯 **Sub-pixel Precision**: Uses fractional accumulation logic to ensure even the smallest recoil values (e.g., 0.05) result in smooth, jitter-free movement.
-- 🔄 **Smart Toggle System**: Start and stop your macro with a single global hotkey. No need to remember two different buttons.
-- ⏱️ **Custom Pulse Delay**: Adjust the loop speed from 5ms to 50ms. Optimize for your game's engine and your mouse's polling rate.
-- 💾 **Intelligent Presets**: Create named profiles (AK-47, M4, etc.) with unique vertical, horizontal, and delay settings.
-- 🎹 **Global Hotkey switching**: Assign unique keys to your presets to switch weapon profiles instantly while in-game.
-- 📥 **System Tray Integration**: Minimize the app to the system tray to keep your taskbar clean while it runs in the background.
-- 📦 **Portable & Self-Contained**: No installation required. Runs on any Windows 10/11 PC without needing .NET runtimes installed.
+**GHOSTWing** is a high-precision, industrial-grade anti-recoil utility for Windows. Designed for power users and enthusiasts, it provides low-latency, sub-pixel movement control to neutralize weapon recoil in any environment. Built with a focus on stealth and performance, GHOSTWing is the ultimate companion for precision input management.
 
 ---
 
-## 🛠️ How to Use
+## ✨ Key Features
 
-1. **Configure Recoil**: Adjust the **Vertical** and **Horizontal** sliders until your weapon pattern is neutralized.
-2. **Set Speed**: Use the **Delay (ms)** slider to match your game's fire rate (5ms is recommended for most shooters).
-3. **Save a Preset**: Give your config a name, assign a shortcut key, and click **Save / Update**.
-4. **Set Toggle Key**: Assign a global "Toggle Key" to start/stop the macro instantly.
-5. **Hide & Play**: Click **Hide to Tray** and enter your game. Use your Toggle Key to activate the macro when you're ready to fire.
+### 🎯 High-Precision Engine
+- **Sub-pixel Movement**: Uses fractional accumulation logic to handle tiny recoil adjustments (e.g., `0.01` steps) without jitter.
+- **Micro-Delay Control**: Fine-tune the processing loop from **5ms to 50ms** to match your game's engine or fire rate.
+- **Dual Activation Modes**: Choose between **Hold Right + Left Mouse** or **Hold Left Mouse Only** to suit your playstyle.
+
+### 🕵️ Advanced Stealth Features (New!)
+- **Streamer Mode (Content Hide)**: Automatically excludes the application window from screen capture software like **OBS, Discord, and Windows Game Bar**. Your viewers see nothing, even if the app is open on your screen.
+- **Taskbar Stealth**: Completely removes the app from the Windows Taskbar. No icon, no name—total "ghost" operation.
+- **System Tray Integration**: Manage the app entirely from the system tray (near the clock) for a clean workspace.
+
+### 📂 Preset & Profile Management
+- **Named Profiles**: Save unique configurations for different weapons (e.g., AK-47, M4, SMG).
+- **Global Hotkeys**: Switch between weapon profiles instantly in-game using custom keyboard shortcuts.
+- **Export/Import**: Share your weapon configurations with others or backup your settings via JSON files.
+
+### 🛠️ Professional Architecture
+- **Auto-Update Engine**: Checks for the latest version and community updates automatically on startup.
+- **Modern UI**: Dark-themed, high-contrast interface designed for low light environments.
+- **Zero Installation**: Portable executable that stores settings in `%APPDATA%\GHOSTWing` for persistence.
+
+---
+
+## 🚀 Getting Started
+
+### Installation
+GHOSTWing is portable and requires no installation.
+1. Download the latest release.
+2. Extract the files to a folder of your choice.
+3. Run `GHOSTWing.exe`.
+
+### Basic Usage
+1. **Neutralize Recoil**: Move the **Vertical** and **Horizontal** sliders until your recoil pattern is countered.
+2. **Set the Fire Rate**: Adjust the **Delay** slider (5ms-7ms is ideal for most modern shooters).
+3. **Create a Profile**: Enter a weapon name (e.g., "Assault-Rifle"), set a shortcut, and click **Save / Update**.
+4. **Enable Stealth**: Toggle **Streamer Mode** in the Control Panel to hide the app from your screen recordings and taskbar.
+5. **Activate**: Use your global **Toggle Key** to start/stop the controller while in-game.
+
+---
+
+## 💻 Developer Information
+
+### Tech Stack
+- **Language**: C# 13 / .NET 10.0
+- **Framework**: Windows Presentation Foundation (WPF)
+- **APIs**: Low-level Win32 Hooks (`user32.dll`), `SetWindowDisplayAffinity` for stealth.
+
+### Build Instructions
+To build the project from source, ensure you have the .NET 10 SDK installed:
+```powershell
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+```
 
 ---
 
 ## 📂 Configuration Storage
-GHOSTWing follows professional Windows standards. Your settings and presets are stored in:
+Settings and presets are securely stored in the following directory:
 `%APPDATA%\GHOSTWing\`
 
-This ensures your configurations are safe even if you move or rename the `.exe` file.
+Files included:
+- `settings.json`: Global application preferences and stealth states.
+- `Presets/`: A directory containing your custom weapon JSON files.
 
 ---
 
-## 📦 Requirements & Compatibility
-- **OS**: Windows 10 or Windows 11 (64-bit)
-- **Runtime**: None (if using the Self-Contained build)
-- **Privileges**: May require "Run as Administrator" for some games to allow mouse input injection.
+## ⚠️ Disclaimer & Safety
+**USE RESPONSIBLY.** GHOSTWing is a utility for input modification. 
+- Using macros or input controllers may violate the **Terms of Service (ToS)** of certain competitive online games.
+- This software is provided "as is" without warranty of any kind. 
+- The developers of GHOSTWing are not responsible for any account bans, hardware issues, or damages resulting from the use of this tool.
+- **Tip**: Always test your settings in a training environment or offline mode first.
 
 ---
 
-## ⚠️ Disclaimer
-**Use at your own risk.** This software utilizes low-level keyboard/mouse hooks and simulates synthetic input. 
-- Using macros may be against the Terms of Service (ToS) of certain online games.
-- The authors of GHOSTWing are not responsible for any bans, account restrictions, or damages resulting from the use of this tool.
-- Always use responsibly in offline or training modes.
-
----
 **Produced by GHOST-404**
+*Empowering precision through code.*
