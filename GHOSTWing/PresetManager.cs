@@ -30,6 +30,8 @@ namespace GHOSTWing
             File.WriteAllText(FilePath, json);
         }
 
+        public string GetFolderPath() => Path.GetDirectoryName(FilePath)!;
+
         public void AddOrUpdatePreset(RecoilPreset preset)
         {
             var existing = Presets.Find(p => p.Name == preset.Name);
@@ -37,6 +39,7 @@ namespace GHOSTWing
             {
                 existing.Vertical = preset.Vertical;
                 existing.Horizontal = preset.Horizontal;
+                existing.Delay = preset.Delay;
                 existing.ShortcutKey = preset.ShortcutKey;
             }
             else

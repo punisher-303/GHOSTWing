@@ -218,6 +218,17 @@
                             </WrapPanel>
                         </StackPanel>
                     </GroupBox>
+
+                    <!-- Community & Files Section -->
+                    <GroupBox Header="COMMUNITY &amp; FILES" Style="{StaticResource CardGroupBox}">
+                        <StackPanel>
+                            <TextBlock Text="Share or load presets from other players." FontSize="11" Foreground="#B0B0B0" Margin="0,0,0,8"/>
+                            <UniformGrid Columns="2">
+                                <Button Name="btnOpenFolder" Content="📂 Open Folder" Margin="0,0,4,0" Click="btnOpenFolder_Click" ToolTip="Open the settings folder in Windows Explorer."/>
+                                <Button Name="btnImportPreset" Content="📥 Import JSON" Margin="4,0,0,0" Click="btnImportPreset_Click" ToolTip="Load a preset file from another player."/>
+                            </UniformGrid>
+                        </StackPanel>
+                    </GroupBox>
                 </StackPanel>
 
                 <!-- RIGHT SIDE: Presets -->

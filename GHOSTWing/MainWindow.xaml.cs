@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Interop;
 using System.Text.Json;
 using System.Diagnostics;
+using Microsoft.Win32;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
 
 namespace GHOSTWing
@@ -219,6 +220,68 @@ namespace GHOSTWing
                 Process.Start(new ProcessStartInfo(downloadUrl) { UseShellExecute = true });
             }
             catch { }
+        }
+
+        private void btnOpenFolder_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string path = presetManager.GetFolderPath();
+                if (!Directory.Exists(path)) Directory.CreateDirectory(path);
+                Process.Start("explorer.exe", path);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Could not open folder: " + ex.Message);
+            }
+        }
+
+        private void btnImportPreset_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                OpenFileDialog openFileDialog = new OpenFileDialog();
+                openFileDialog.Filter = "JSON Files (*.json)|*.json|All Files (*.*)|*.*";
+                
+                if (openFileDialog.ShowDialog() == true)
+                {
+                    string json = File.ReadAllText(openFileDialog.FileName);
+                    
+                    // Try to deserialize as a list or a single preset
+                    List<RecoilPreset>? imported = null;
+                    try 
+                    {
+                        imported = JsonSerializer.Deserialize<List<RecoilPreset>>(json);
+                    }
+                    catch 
+                    {
+                        var single = JsonSerializer.Deserialize<RecoilPreset>(json);
+                        if (single != null) imported = new List<RecoilPreset> { single };
+                    }
+
+                    if (imported != null)
+                    {
+                        int count = 0;
+                        foreach (var p in imported)
+                        {
+                            if (string.IsNullOrEmpty(p.Name)) continue;
+                            presetManager.AddOrUpdatePreset(p);
+                            count++;
+                        }
+                        
+                        LoadPresets(); // Refresh UI
+                        MessageBox.Show($"Successfully imported {count} preset(s)!");
+                    }
+                    else
+                    {
+                        MessageBox.Show("Invalid preset file format.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error importing preset: " + ex.Message);
+            }
         }
 
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
