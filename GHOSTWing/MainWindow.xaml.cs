@@ -129,13 +129,13 @@ namespace GHOSTWing
 
             txtAppVersion.Text = AppVersion;
             txtBadgeVersion.Text = "v" + AppVersion;
+            _ = CheckForUpdates(); // Start silent background check on startup
         }
 
         private async void CheckUpdate_Click(object sender, MouseButtonEventArgs e)
         {
             try
             {
-                if (btnUpdateStatusTitle.Text == "LATEST") return;
                 if (btnUpdateStatusTitle.Text == "UPDATE NOW")
                 {
                     OpenDownloadLink();
