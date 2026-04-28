@@ -5,6 +5,10 @@
 ![Framework](https://img.shields.io/badge/.NET-10.0-purple?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production--Ready-success?style=for-the-badge)
 
+<p align="center">
+  <img src="Screenshot.png" alt="GHOSTWing UI" width="800">
+</p>
+
 **GHOSTWing** is a high-precision, industrial-grade anti-recoil utility for Windows. Designed for power users and enthusiasts, it provides low-latency, sub-pixel movement control to neutralize weapon recoil in any environment. Built with a focus on stealth and performance, GHOSTWing is the ultimate companion for precision input management.
 
 ---
