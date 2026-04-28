@@ -339,7 +339,7 @@
                                         Storyboard.TargetName="marqueeTransform"
                                         Storyboard.TargetProperty="X"
                                         From="1200" To="-1500" 
-                                        Duration="0:0:15"/>
+                                        Duration="0:0:45"/>
                                 </Storyboard>
                             </BeginStoryboard>
                         </EventTrigger>
