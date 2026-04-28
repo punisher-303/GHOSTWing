@@ -189,14 +189,14 @@ namespace GHOSTWing
 
                         if (IsNewerVersion(latestVersion, AppVersion))
                         {
-                            btnUpdateStatusTitle.Text = "UPDATE NOW";
+                            btnUpdateStatusTitle.Text = "📥 UPDATE NOW";
                             btnUpdateStatusTitle.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#D32F2F") ?? System.Windows.Media.Brushes.Red;
-                            txtUpdateStatus.Text = "Update available";
+                            txtUpdateStatus.Text = "New version available for download";
                             txtUpdateStatus.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#1DB954") ?? System.Windows.Media.Brushes.Green;
                             
-                            txtBadgeVersion.Text = "v" + latestVersion;
+                            txtBadgeVersion.Text = "v" + latestVersion + " ↓";
                             txtBadgeVersion.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#1DB954") ?? System.Windows.Media.Brushes.Green;
-                            txtBadgeArrow.Visibility = Visibility.Visible;
+                            txtBadgeArrow.Visibility = Visibility.Collapsed; // We added it to the text directly
                         }
                         else
                         {
