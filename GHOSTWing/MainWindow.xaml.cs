@@ -143,6 +143,10 @@ namespace GHOSTWing
             UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
             this.ShowInTaskbar = !settingsManager.Settings.IsStreamerMode;
 
+            // Initialize System Info
+            txtOSVersion.Text = GetFriendlyOSName();
+            txtRuntimeVersion.Text = RuntimeInformation.FrameworkDescription;
+
             _ = CheckForUpdates(); // Start silent background check on startup
         }
 
@@ -605,6 +609,26 @@ namespace GHOSTWing
                 SetWindowDisplayAffinity(helper.Handle, affinity);
             }
             catch { }
+        }
+
+        private string GetFriendlyOSName()
+        {
+            string desc = RuntimeInformation.OSDescription;
+            // Windows 11 often reports as Windows 10 with a build number >= 22000
+            if (desc.Contains("Windows 10") || desc.Contains("Windows 10.0"))
+            {
+                // Simple build number check via OSDescription string
+                // Example: "Microsoft Windows 10.0.22631"
+                try {
+                    string[] parts = desc.Split('.');
+                    if (parts.Length >= 3) {
+                        if (int.TryParse(parts[2], out int build) && build >= 22000) {
+                            return desc.Replace("Windows 10", "Windows 11").Replace("10.0", "11.0");
+                        }
+                    }
+                } catch { }
+            }
+            return desc;
         }
 
         private void AutoRecoilLoop()
