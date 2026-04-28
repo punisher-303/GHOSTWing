@@ -157,23 +157,24 @@
         </Grid.RowDefinitions>
 
         <!-- Header -->
-            <DockPanel Grid.Row="0" Margin="0,0,0,10">
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                    <Image Source="assets/logo.png" Width="42" Height="42" Margin="0,0,12,0" RenderOptions.BitmapScalingMode="HighQuality"/>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Name="txtMainTitle" Text="GHOSTWing" FontSize="22" FontWeight="Bold" Foreground="#D32F2F" Cursor="Hand" MouseLeftButtonDown="Title_Click"/>
-                        <TextBlock Text="Anti-recoil controller" FontSize="11" Foreground="White" Margin="0,2,0,0"/>
-                    </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <!-- Center Title/Logo -->
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <Image Source="assets/logo.png" Width="42" Height="42" Margin="0,0,12,0" RenderOptions.BitmapScalingMode="HighQuality"/>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock Name="txtMainTitle" Text="GHOSTWing" FontSize="22" FontWeight="Bold" Foreground="#D32F2F" Cursor="Hand" MouseLeftButtonDown="Title_Click" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Anti-recoil controller" FontSize="11" Foreground="White" Margin="0,2,0,0" HorizontalAlignment="Center"/>
                 </StackPanel>
+            </StackPanel>
 
-                <!-- Version Badge -->
-                <Border DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="#1DB954" BorderThickness="1.5" CornerRadius="15" Padding="12,4" Background="#1000FF00">
-                    <StackPanel Orientation="Horizontal">
-                        <TextBlock Name="txtBadgeArrow" Text="↓ " Visibility="Collapsed" Foreground="#1DB954" FontWeight="Bold" FontSize="16"/>
-                        <TextBlock Name="txtBadgeVersion" Text="v1.0.0" Foreground="#B0B0B0" FontSize="16" FontWeight="Black"/>
-                    </StackPanel>
-                </Border>
-            </DockPanel>
+            <!-- Version Badge (Remains on right) -->
+            <Border VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="#1DB954" BorderThickness="1.5" CornerRadius="15" Padding="12,4" Background="#1000FF00">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Name="txtBadgeArrow" Text="↓ " Visibility="Collapsed" Foreground="#1DB954" FontWeight="Bold" FontSize="16"/>
+                    <TextBlock Name="txtBadgeVersion" Text="v1.0.0" Foreground="#B0B0B0" FontSize="16" FontWeight="Black"/>
+                </StackPanel>
+            </Border>
+        </Grid>l>
 
         <!-- Main Card -->
         <Border Grid.Row="1" Background="#050505" CornerRadius="12" Padding="12" BorderBrush="#222222" BorderThickness="1">
