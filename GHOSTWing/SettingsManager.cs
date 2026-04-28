@@ -7,6 +7,7 @@ namespace GHOSTWing
     public class AppSettings
     {
         public string ToggleShortcut { get; set; } = "";
+        public bool IsStreamerMode { get; set; } = false;
     }
 
     public class SettingsManager

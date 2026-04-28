@@ -56,6 +56,12 @@ namespace GHOSTWing
         [DllImport("user32.dll")]
         static extern short GetAsyncKeyState(int vKey);
 
+        [DllImport("user32.dll")]
+        public static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity);
+
+        const uint WDA_NONE = 0x00000000;
+        const uint WDA_EXCLUDEFROMCAPTURE = 0x00000011;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -131,6 +137,12 @@ namespace GHOSTWing
 
             txtAppVersion.Text = AppVersion;
             txtBadgeVersion.Text = "v" + AppVersion;
+            
+            // Initialize Streamer Mode (Combined Stealth)
+            btnStreamerMode.IsChecked = settingsManager.Settings.IsStreamerMode;
+            UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
+            this.ShowInTaskbar = !settingsManager.Settings.IsStreamerMode;
+
             _ = CheckForUpdates(); // Start silent background check on startup
         }
 
@@ -572,6 +584,27 @@ namespace GHOSTWing
         {
             this.Hide();
             _notifyIcon?.ShowBalloonTip(2000, "GHOSTWing", "Running in the background. Double-click the tray icon to restore.", System.Windows.Forms.ToolTipIcon.Info);
+        }
+
+        private void btnStreamerMode_Click(object sender, RoutedEventArgs e)
+        {
+            bool isEnabled = btnStreamerMode.IsChecked ?? false;
+            settingsManager.Settings.IsStreamerMode = isEnabled;
+            settingsManager.Save();
+            
+            UpdateStreamerMode(isEnabled);
+            this.ShowInTaskbar = !isEnabled;
+        }
+
+        private void UpdateStreamerMode(bool enabled)
+        {
+            try
+            {
+                var helper = new WindowInteropHelper(this);
+                uint affinity = enabled ? WDA_EXCLUDEFROMCAPTURE : WDA_NONE;
+                SetWindowDisplayAffinity(helper.Handle, affinity);
+            }
+            catch { }
         }
 
         private void AutoRecoilLoop()

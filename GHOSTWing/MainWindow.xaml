@@ -107,6 +107,46 @@
             <Setter Property="Margin" Value="0,0,4,0"/>
         </Style>
 
+        <!-- Modern Toggle Switch Style -->
+        <Style x:Key="StreamerToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="50"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Grid>
+                            <Border x:Name="Background" Background="#444444" CornerRadius="12" BorderThickness="0"/>
+                            <Ellipse x:Name="Dot" Fill="White" Width="18" Height="18" HorizontalAlignment="Left" Margin="3,0,0,0">
+                                <Ellipse.RenderTransform>
+                                    <TranslateTransform x:Name="DotTransform" X="0"/>
+                                </Ellipse.RenderTransform>
+                            </Ellipse>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Background" Property="Background" Value="#1DB954"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="DotTransform" Storyboard.TargetProperty="X" To="26" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="DotTransform" Storyboard.TargetProperty="X" To="0" Duration="0:0:0.2"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
     </Window.Resources>
 
     <Grid Margin="12">
@@ -190,32 +230,52 @@
 
                     <!-- Control Panel -->
                     <GroupBox Header="Control Panel" Style="{StaticResource CardGroupBox}">
-                        <StackPanel>
-                            <TextBlock Margin="0,4,0,4" Foreground="#BBBBBB" FontSize="11" Text="Activation Mode:"/>
-                            <WrapPanel Orientation="Horizontal">
-                                <Button Name="btnModeRightLeft" Content="Hold Right + Left Mouse" MinWidth="160" Background="#1DB954" Click="btnModeRightLeft_Click" Margin="0,0,8,8"/>
-                                <Button Name="btnModeLeftOnly" Content="Hold Left Mouse" MinWidth="140" Background="Black" Click="btnModeLeftOnly_Click" Margin="0,0,8,8"/>
-                            </WrapPanel>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
 
-                            <Grid Margin="0,16,0,16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-                                <Label Grid.Column="0" Content="Toggle Key:"/>
-                                <WrapPanel Grid.Column="1">
-                                    <TextBox Name="txtToggleShortcut" Width="100" IsReadOnly="True" HorizontalContentAlignment="Center"/>
-                                    <Button Name="btnSetToggleShortcut" Content="Set Key" MinWidth="70" Margin="8,0,0,0" Background="Black" Click="btnSetToggleShortcut_Click"/>
-                                    <Button Name="btnClearToggleShortcut" Content="Clear" MinWidth="60" Margin="8,0,0,0" Background="#D32F2F" Click="btnClearToggleShortcut_Click"/>
+                            <!-- Left portion: Main Controls -->
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Margin="0,4,0,4" Foreground="#BBBBBB" FontSize="11" Text="Activation Mode:"/>
+                                <WrapPanel Orientation="Horizontal">
+                                    <Button Name="btnModeRightLeft" Content="Hold Right + Left Mouse" MinWidth="160" Background="#1DB954" Click="btnModeRightLeft_Click" Margin="0,0,8,8"/>
+                                    <Button Name="btnModeLeftOnly" Content="Hold Left Mouse" MinWidth="140" Background="Black" Click="btnModeLeftOnly_Click" Margin="0,0,8,8"/>
                                 </WrapPanel>
-                            </Grid>
 
-                            <WrapPanel Orientation="Horizontal" Margin="0,4,0,0" VerticalAlignment="Center">
-                                <Button Name="btnStart" Content="Start" MinWidth="100" Background="Black" Click="btnStart_Click" Margin="0,0,8,8"/>
-                                <Button Name="btnStop" Content="Stop" MinWidth="100" Background="#D32F2F" Click="btnStop_Click" Margin="0,0,8,8"/>
-                                <Button Name="btnHide" Content="Hide to Tray" MinWidth="110" Background="Black" Click="btnHide_Click" Margin="0,0,8,8"/>
-                            </WrapPanel>
-                        </StackPanel>
+                                <Grid Margin="0,16,0,16">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Label Grid.Column="0" Content="Toggle Key:"/>
+                                    <WrapPanel Grid.Column="1">
+                                        <TextBox Name="txtToggleShortcut" Width="100" IsReadOnly="True" HorizontalContentAlignment="Center"/>
+                                        <Button Name="btnSetToggleShortcut" Content="Set Key" MinWidth="70" Margin="8,0,0,0" Background="Black" Click="btnSetToggleShortcut_Click"/>
+                                        <Button Name="btnClearToggleShortcut" Content="Clear" MinWidth="60" Margin="8,0,0,0" Background="#D32F2F" Click="btnClearToggleShortcut_Click"/>
+                                    </WrapPanel>
+                                </Grid>
+
+                                <WrapPanel Orientation="Horizontal" Margin="0,4,0,0" VerticalAlignment="Center">
+                                    <Button Name="btnStart" Content="Start" MinWidth="100" Background="Black" Click="btnStart_Click" Margin="0,0,8,8"/>
+                                    <Button Name="btnStop" Content="Stop" MinWidth="100" Background="#D32F2F" Click="btnStop_Click" Margin="0,0,8,8"/>
+                                    <Button Name="btnHide" Content="Hide to Tray" MinWidth="110" Background="Black" Click="btnHide_Click" Margin="0,0,8,8"/>
+                                </WrapPanel>
+                            </StackPanel>
+
+                            <!-- Right portion: Streamer Mode Box -->
+                            <Border Grid.Column="1" Background="#0A0A0A" CornerRadius="10" BorderBrush="#333333" BorderThickness="1" Padding="15,10" Margin="15,0,0,0" MinWidth="130">
+                                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                    <TextBlock Text="STREAMER MODE" FontSize="10" FontWeight="Black" Foreground="#BBBBBB" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                    <ToggleButton Name="btnStreamerMode" Style="{StaticResource StreamerToggleStyle}" Click="btnStreamerMode_Click" HorizontalAlignment="Center" ToolTip="Enable full stealth (hides app content and taskbar icon)"/>
+                                    <TextBlock Text="OFF / ON" FontSize="9" Foreground="#888888" Margin="0,8,0,0" HorizontalAlignment="Center"/>
+                                    
+                                    <TextBlock Text="Hides app from" FontSize="9" Foreground="#AAAAAA" Margin="0,12,0,0" HorizontalAlignment="Center"/>
+                                    <TextBlock Text="Capture &amp; Taskbar" FontSize="9" Foreground="#AAAAAA" HorizontalAlignment="Center"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
                     </GroupBox>
 
                     <!-- Community & Files Section -->
