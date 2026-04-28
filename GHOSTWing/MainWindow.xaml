@@ -1,8 +1,35 @@
 <Window x:Class="GHOSTWing.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="GHOSTWing" Icon="assets/icon.ico" Width="1180" SizeToContent="Height" ResizeMode="CanResize" Background="#000000" WindowStartupLocation="CenterScreen">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="GHOSTWing" Icon="assets/icon.ico" Width="1180" SizeToContent="Height" MinHeight="500" ResizeMode="CanResize" Background="#000000" WindowStartupLocation="CenterScreen">
 
     <Window.Resources>
+
+        <!-- Global Button Style -->
+        <Style TargetType="Button">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderBrush" Value="White"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Opacity" Value="0.8"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
 
         <!-- Card-like GroupBox style -->
         <Style x:Key="CardGroupBox" TargetType="GroupBox">
@@ -128,7 +155,7 @@
                 </StackPanel>
 
                 <!-- Version Badge -->
-                <Border DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="#00FF00" BorderThickness="1.5" CornerRadius="15" Padding="12,4" Background="#104CAF50">
+                <Border DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="#00FF00" BorderThickness="1.5" CornerRadius="15" Padding="12,4" Background="#1000FF00">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Name="txtBadgeArrow" Text="↓ " Visibility="Collapsed" Foreground="#00FF00" FontWeight="Bold" FontSize="16"/>
                         <TextBlock Name="txtBadgeVersion" Text="v1.0.0" Foreground="#B0B0B0" FontSize="16" FontWeight="Black"/>

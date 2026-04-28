@@ -133,14 +133,18 @@ namespace GHOSTWing
 
         private async void CheckUpdate_Click(object sender, MouseButtonEventArgs e)
         {
-            if (btnUpdateStatusTitle.Text == "LATEST") return;
-            if (btnUpdateStatusTitle.Text == "UPDATE NOW")
+            try
             {
-                OpenDownloadLink();
-                return;
-            }
+                if (btnUpdateStatusTitle.Text == "LATEST") return;
+                if (btnUpdateStatusTitle.Text == "UPDATE NOW")
+                {
+                    OpenDownloadLink();
+                    return;
+                }
 
-            await CheckForUpdates();
+                await CheckForUpdates();
+            }
+            catch { }
         }
 
         private async Task CheckForUpdates()
@@ -166,18 +170,18 @@ namespace GHOSTWing
                         if (IsNewerVersion(latestVersion, AppVersion))
                         {
                             btnUpdateStatusTitle.Text = "UPDATE NOW";
-                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(Color.FromRgb(255, 0, 0));
+                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 0));
                             txtUpdateStatus.Text = "Update available";
-                            txtUpdateStatus.Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+                            txtUpdateStatus.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 0));
                             
                             txtBadgeVersion.Text = "v" + latestVersion;
-                            txtBadgeVersion.Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+                            txtBadgeVersion.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 0));
                             txtBadgeArrow.Visibility = Visibility.Visible;
                         }
                         else
                         {
                             btnUpdateStatusTitle.Text = "LATEST";
-                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 0));
                             btnUpdateStatusTitle.Cursor = System.Windows.Input.Cursors.Arrow;
                             txtUpdateStatus.Text = "Using Latest version";
                         }
@@ -204,11 +208,6 @@ namespace GHOSTWing
         }
 
         private void Title_Click(object sender, MouseButtonEventArgs e)
-        {
-            OpenDownloadLink();
-        }
-
-        private void UpdateNow_Click(object sender, MouseButtonEventArgs e)
         {
             OpenDownloadLink();
         }
