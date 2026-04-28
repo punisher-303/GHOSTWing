@@ -19,8 +19,8 @@ namespace GHOSTWing
         const uint MOUSEEVENTF_MOVE = 0x0001;
         const int VK_LBUTTON = 0x01;
         const string AppVersion = "1.0.0";
-        const string UpdateJsonUrl = "https://raw.githubusercontent.com/GHOST-404/GHOSTWing/main/version.json"; // Replace with your real URL
-        private string downloadUrl = "https://github.com/GHOST-404/GHOSTWing/releases"; // Default fallback
+        const string UpdateJsonUrl = "https://raw.githubusercontent.com/punisher-303/GHOSTWing/refs/heads/main/version.json";
+        private string downloadUrl = "https://github.com/punisher-303/GHOSTWing/releases"; // Default fallback
 
         private bool recoilActive = false;
         private Thread? recoilThread;
