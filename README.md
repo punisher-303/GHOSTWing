@@ -1,6 +1,6 @@
 # 🦅 GHOSTWing – Professional Anti-Recoil Controller
 
-![Version](https://img.shields.io/badge/version-1.0.0-red?style=for-the-badge)
+![Version](https://img.shields.io/github/v/release/punisher-303/GHOSTWing?style=for-the-badge&color=red)
 ![Platform](https://img.shields.io/badge/platform-Windows-blue?style=for-the-badge)
 ![Framework](https://img.shields.io/badge/.NET-10.0-purple?style=for-the-badge)
 ![Status](https://img.shields.io/badge/Status-Production--Ready-success?style=for-the-badge)

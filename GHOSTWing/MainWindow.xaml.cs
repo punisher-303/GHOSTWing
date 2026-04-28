@@ -22,7 +22,7 @@ namespace GHOSTWing
         const uint INPUT_MOUSE = 0;
         const uint MOUSEEVENTF_MOVE = 0x0001;
         const int VK_LBUTTON = 0x01;
-        const string AppVersion = "1.0.0";
+        const string AppVersion = "1.0.1";
         const string UpdateJsonUrl = "https://raw.githubusercontent.com/punisher-303/GHOSTWing/refs/heads/main/version.json";
         private string downloadUrl = "https://github.com/punisher-303/GHOSTWing/releases"; // Default fallback
 
@@ -48,6 +48,11 @@ namespace GHOSTWing
         private double accumulatedX = 0;
         private double accumulatedY = 0;
 
+        // Cached slider values to avoid expensive Dispatcher.Invoke in background thread
+        private double _cachedVertical = 0;
+        private double _cachedHorizontal = 0;
+        private int _cachedDelay = 5;
+
 
 
         [DllImport("user32.dll")]
@@ -58,6 +63,12 @@ namespace GHOSTWing
 
         [DllImport("user32.dll")]
         public static extern bool SetWindowDisplayAffinity(IntPtr hwnd, uint affinity);
+
+        [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
+        private static extern uint timeBeginPeriod(uint uPeriod);
+
+        [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
+        private static extern uint timeEndPeriod(uint uPeriod);
 
         const uint WDA_NONE = 0x00000000;
         const uint WDA_EXCLUDEFROMCAPTURE = 0x00000011;
@@ -73,6 +84,11 @@ namespace GHOSTWing
             sliderHorizontal.Value = 0;
 
             // Tray icon moved to Loaded for better stability
+            
+            // Hook up slider value caching
+            sliderVertical.ValueChanged += (s, e) => _cachedVertical = sliderVertical.Value;
+            sliderHorizontal.ValueChanged += (s, e) => _cachedHorizontal = sliderHorizontal.Value;
+            sliderDelay.ValueChanged += (s, e) => _cachedDelay = (int)sliderDelay.Value;
 
             Loaded += MainWindow_Loaded;
             Closing += MainWindow_Closing;
@@ -146,6 +162,14 @@ namespace GHOSTWing
             // Initialize System Info
             txtOSVersion.Text = GetFriendlyOSName();
             txtRuntimeVersion.Text = RuntimeInformation.FrameworkDescription;
+
+            // Set high process priority for consistent performance
+            try { Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High; } catch { }
+
+            // Initialize cached values from sliders
+            _cachedVertical = sliderVertical.Value;
+            _cachedHorizontal = sliderHorizontal.Value;
+            _cachedDelay = (int)sliderDelay.Value;
 
             _ = CheckForUpdates(); // Start silent background check on startup
         }
@@ -306,17 +330,17 @@ namespace GHOSTWing
                         
                         RefreshPresetCombo(); // Fixed method name
                         RefreshPresetHotkeys();
-                        System.Windows.MessageBox.Show($"Successfully imported {count} preset(s)!");
+                        ShowNotification($"Imported {count} presets successfully!");
                     }
                     else
                     {
-                        System.Windows.MessageBox.Show("Invalid preset file format.");
+                        ShowNotification("Invalid preset file format.", "Error");
                     }
                 }
             }
             catch (Exception ex)
             {
-                System.Windows.MessageBox.Show("Error importing preset: " + ex.Message);
+                ShowNotification("Error importing: " + ex.Message, "Error");
             }
         }
 
@@ -403,6 +427,7 @@ namespace GHOSTWing
                 presetManager.AddOrUpdatePreset(preset);
                 RefreshPresetCombo();
                 RefreshPresetHotkeys(); // re-register after changes
+                ShowNotification($"Preset '{preset.Name}' saved!");
             }
         }
 
@@ -435,7 +460,7 @@ namespace GHOSTWing
                 txtPresetName.Clear();
                 txtShortcutKey.Clear();
                 RefreshPresetHotkeys();
-                RefreshPresetHotkeys();
+                ShowNotification($"Preset '{selectedName}' deleted.", "Warning");
             }
         }
 
@@ -457,11 +482,7 @@ namespace GHOSTWing
                     presetManager.AddOrUpdatePreset(preset);
                     RefreshPresetHotkeys();
 
-                    System.Windows.MessageBox.Show(
-                        $"Shortcut cleared for preset '{preset.Name}'.",
-                        "Keybind Deleted",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Information);
+                    ShowNotification($"Shortcut cleared for '{preset.Name}'", "Warning");
                 }
             }
         }
@@ -470,11 +491,7 @@ namespace GHOSTWing
         {
             if (presetManager.Presets.Count == 0)
             {
-                System.Windows.MessageBox.Show(
-                    "There are no presets to clear.",
-                    "No Presets",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                ShowNotification("No presets found to clear.", "Error");
                 return;
             }
 
@@ -496,11 +513,7 @@ namespace GHOSTWing
             txtShortcutKey.Text = string.Empty;
             RefreshPresetHotkeys();
 
-            System.Windows.MessageBox.Show(
-                "All preset shortcuts have been cleared.",
-                "Shortcuts Cleared",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            ShowNotification("All shortcuts cleared.", "Warning");
         }
 
         private void AssignShortcut(string shortcut)
@@ -515,7 +528,7 @@ namespace GHOSTWing
             {
                 if (hotkeyPresetMap.ContainsKey(shortcut))
                 {
-                    System.Windows.MessageBox.Show($"Shortcut '{shortcut}' is already assigned to another preset.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    ShowNotification($"Key '{shortcut}' already in use!", "Error");
                 }
                 else
                 {
@@ -553,7 +566,7 @@ namespace GHOSTWing
             if (!recoilActive)
             {
                 recoilActive = true;
-                recoilThread = new Thread(AutoRecoilLoop) { IsBackground = true };
+                recoilThread = new Thread(AutoRecoilLoop) { IsBackground = true, Priority = ThreadPriority.Highest };
                 recoilThread.Start();
 
                 btnStart.Content = "Running...";
@@ -611,6 +624,34 @@ namespace GHOSTWing
             catch { }
         }
 
+        private void ShowNotification(string message, string type = "Success")
+        {
+            Dispatcher.BeginInvoke(() =>
+            {
+                txtNotificationMessage.Text = message;
+                
+                if (type == "Success")
+                {
+                    NotificationBorder.Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1DB954")); // Green
+                    txtNotificationIcon.Text = "✓";
+                }
+                else if (type == "Warning")
+                {
+                    NotificationBorder.Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FFA500")); // Orange
+                    txtNotificationIcon.Text = "⚠";
+                }
+                else if (type == "Error")
+                {
+                    NotificationBorder.Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#D32F2F")); // Red
+                    txtNotificationIcon.Text = "✕";
+                }
+
+                var sb = (System.Windows.Media.Animation.Storyboard)this.Resources["ShowNotificationAnim"];
+                sb.Stop(); // Reset if already playing
+                sb.Begin();
+            });
+        }
+
         private string GetFriendlyOSName()
         {
             string desc = RuntimeInformation.OSDescription;
@@ -633,67 +674,69 @@ namespace GHOSTWing
 
         private void AutoRecoilLoop()
         {
-            while (recoilActive)
+            // Set 1ms timer resolution for high-precision sleep
+            timeBeginPeriod(1);
+            
+            try
             {
-                bool leftPressed = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-                bool rightPressed = (GetAsyncKeyState(0x02) & 0x8000) != 0;
+                Stopwatch sw = new Stopwatch();
 
-                bool shouldActivate = false;
-                if (currentActivationMode == ActivationMode.RightAndLeft)
-                    shouldActivate = leftPressed && rightPressed;
-                else
-                    shouldActivate = leftPressed;
-
-                if (shouldActivate)
+                while (recoilActive)
                 {
-                    double vertical = 0;
-                    double horizontal = 0;
+                    sw.Restart();
 
-                    // Read current slider values on the UI thread
-                    Dispatcher.Invoke(() =>
+                    bool leftPressed = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
+                    bool rightPressed = (GetAsyncKeyState(0x02) & 0x8000) != 0;
+
+                    bool shouldActivate = false;
+                    if (currentActivationMode == ActivationMode.RightAndLeft)
+                        shouldActivate = leftPressed && rightPressed;
+                    else
+                        shouldActivate = leftPressed;
+
+                    if (shouldActivate)
                     {
-                        vertical = sliderVertical.Value;
-                        horizontal = sliderHorizontal.Value;
-                    });
+                        double vertical = _cachedVertical;
+                        double horizontal = _cachedHorizontal;
 
-                    // Accumulate fractional movement
-                    accumulatedX += horizontal;
-                    accumulatedY += vertical;
+                        // Accumulate fractional movement
+                        accumulatedX += horizontal;
+                        accumulatedY += vertical;
 
-                    int moveX = 0;
-                    int moveY = 0;
+                        int moveX = (int)accumulatedX;
+                        int moveY = (int)accumulatedY;
 
-                    // Only move when magnitude >= 1 in either direction
-                    if (accumulatedX >= 1.0)
-                        moveX = (int)Math.Floor(accumulatedX);
-                    else if (accumulatedX <= -1.0)
-                        moveX = (int)Math.Ceiling(accumulatedX);
+                        accumulatedX -= moveX;
+                        accumulatedY -= moveY;
 
-                    if (accumulatedY >= 1.0)
-                        moveY = (int)Math.Floor(accumulatedY);
-                    else if (accumulatedY <= -1.0)
-                        moveY = (int)Math.Ceiling(accumulatedY);
-
-                    // Remove the part we've actually used
-                    accumulatedX -= moveX;
-                    accumulatedY -= moveY;
-
-                    // Only send input if there is real movement
-                    if (moveX != 0 || moveY != 0)
+                        // Only send input if there is real movement
+                        if (moveX != 0 || moveY != 0)
+                        {
+                            MoveCursorRelative(moveX, moveY);
+                        }
+                    }
+                    else
                     {
-                        MoveCursorRelative(moveX, moveY);
+                        // When not firing, reset so we don't "dump" stored movement later
+                        accumulatedX = 0;
+                        accumulatedY = 0;
+                    }
+
+                    int targetDelay = _cachedDelay;
+                    if (targetDelay < 1) targetDelay = 1;
+                    
+                    // Turbo Busy-Wait: 100% CPU active for perfect precision
+                    // This prevents Windows from ever putting the thread to sleep when minimized
+                    while (sw.ElapsedMilliseconds < targetDelay)
+                    {
+                        // Just stay active
                     }
                 }
-                else
-                {
-                    // When not firing, reset so we don't "dump" stored movement later
-                    accumulatedX = 0;
-                    accumulatedY = 0;
-                }
-
-                int delay = 5;
-                Dispatcher.Invoke(() => { delay = (int)sliderDelay.Value; });
-                Thread.Sleep(delay);
+            }
+            finally
+            {
+                // Restore system timer resolution
+                timeEndPeriod(1);
             }
         }
 

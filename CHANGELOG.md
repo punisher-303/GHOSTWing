@@ -4,6 +4,15 @@ All notable changes to the **GHOSTWing** project will be documented in this file
 
 ---
 
+## [1.0.1] - 2026-04-29 (Performance & Stability Update)
+
+### 🚀 Optimized
+
+- **Background Performance**: Completely overhauled the recoil loop to eliminate lag when the application is minimized or hidden.
+- **Thread Priority**: Increased process priority to "High" to ensure consistent mouse movement even during heavy CPU load.
+- **UI Decoupling**: Implemented a caching system for settings, removing expensive UI thread calls from the background processing loop.
+- **Modern Notification System**: Replaced dated Windows message boxes with professional, animated "Toast" popups for saving, deleting, and importing presets.
+
 ## [1.0.0] - 2026-04-28 (The Stealth Update)
 
 ### 🚀 Added
