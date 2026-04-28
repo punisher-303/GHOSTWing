@@ -129,21 +129,35 @@ namespace GHOSTWing
 
             txtAppVersion.Text = AppVersion;
             txtBadgeVersion.Text = "v" + AppVersion;
-            CheckForUpdates();
         }
 
-        private async void CheckForUpdates()
+        private async void CheckUpdate_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (btnUpdateStatusTitle.Text == "LATEST") return;
+            if (btnUpdateStatusTitle.Text == "UPDATE NOW")
+            {
+                OpenDownloadLink();
+                return;
+            }
+
+            await CheckForUpdates();
+        }
+
+        private async Task CheckForUpdates()
         {
             try
             {
+                // Animation Start
+                btnUpdateStatusTitle.Text = "Checking...";
+                btnUpdateStatusTitle.Foreground = new SolidColorBrush(System.Windows.Media.Colors.Gray);
+                
+                await Task.Delay(1000); // Small delay for the "Animation" feel
+
                 using (var client = new System.Net.Http.HttpClient())
                 {
-                    // Add a user-agent to prevent being blocked by GitHub
                     client.DefaultRequestHeaders.Add("User-Agent", "GHOSTWing-App");
                     string json = await client.GetStringAsync(UpdateJsonUrl);
                     
-                    // Simple manual parsing to avoid extra dependencies if possible
-                    // Or use System.Text.Json
                     using (JsonDocument doc = JsonDocument.Parse(json))
                     {
                         string latestVersion = doc.RootElement.GetProperty("version").GetString() ?? AppVersion;
@@ -151,20 +165,31 @@ namespace GHOSTWing
 
                         if (IsNewerVersion(latestVersion, AppVersion))
                         {
-                            // Update UI for New Version
                             btnUpdateStatusTitle.Text = "UPDATE NOW";
-                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(System.Windows.Media.Colors.Red);
+                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(Color.FromRgb(255, 0, 0));
                             txtUpdateStatus.Text = "Update available";
-                            txtUpdateStatus.Foreground = new SolidColorBrush(System.Windows.Media.Colors.Green);
+                            txtUpdateStatus.Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 0));
                             
                             txtBadgeVersion.Text = "v" + latestVersion;
-                            txtBadgeVersion.Foreground = new SolidColorBrush(System.Windows.Media.Colors.Green);
+                            txtBadgeVersion.Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 0));
                             txtBadgeArrow.Visibility = Visibility.Visible;
+                        }
+                        else
+                        {
+                            btnUpdateStatusTitle.Text = "LATEST";
+                            btnUpdateStatusTitle.Foreground = new SolidColorBrush(Color.FromRgb(0, 255, 0));
+                            btnUpdateStatusTitle.Cursor = System.Windows.Input.Cursors.Arrow;
+                            txtUpdateStatus.Text = "Using Latest version";
                         }
                     }
                 }
             }
-            catch { /* Ignore network errors */ }
+            catch 
+            { 
+                btnUpdateStatusTitle.Text = "Check Update";
+                btnUpdateStatusTitle.Foreground = new SolidColorBrush(System.Windows.Media.Colors.Gray);
+                txtUpdateStatus.Text = "Check failed";
+            }
         }
 
         private bool IsNewerVersion(string latest, string current)

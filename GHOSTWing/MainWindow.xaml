@@ -15,7 +15,7 @@
                     <ControlTemplate TargetType="GroupBox">
                         <Border Background="#1F1F1F" CornerRadius="10" BorderBrush="#333333" BorderThickness="1" Padding="10">
                             <DockPanel>
-                                <TextBlock Text="{TemplateBinding Header}" DockPanel.Dock="Top" Margin="0,0,0,8" Foreground="#FF3B30" FontWeight="SemiBold" FontSize="13"/>
+                                <TextBlock Text="{TemplateBinding Header}" DockPanel.Dock="Top" Margin="0,0,0,8" Foreground="#FF0000" FontWeight="SemiBold" FontSize="13"/>
                                 <ContentPresenter/>
                             </DockPanel>
                         </Border>
@@ -122,16 +122,16 @@
                 <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
                     <Image Source="assets/logo.png" Width="42" Height="42" Margin="0,0,12,0" RenderOptions.BitmapScalingMode="HighQuality"/>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Name="txtMainTitle" Text="GHOSTWing" FontSize="22" FontWeight="Bold" Foreground="#FF3B30" Cursor="Hand" MouseLeftButtonDown="Title_Click"/>
+                        <TextBlock Name="txtMainTitle" Text="GHOSTWing" FontSize="22" FontWeight="Bold" Foreground="#FF0000" Cursor="Hand" MouseLeftButtonDown="Title_Click"/>
                         <TextBlock Text="Anti-recoil controller" FontSize="11" Foreground="White" Margin="0,2,0,0"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Version Badge -->
-                <Border DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="#4CAF50" BorderThickness="1" CornerRadius="12" Padding="8,2" Background="#104CAF50">
+                <Border DockPanel.Dock="Right" VerticalAlignment="Center" HorizontalAlignment="Right" BorderBrush="#00FF00" BorderThickness="1.5" CornerRadius="15" Padding="12,4" Background="#104CAF50">
                     <StackPanel Orientation="Horizontal">
-                        <TextBlock Name="txtBadgeArrow" Text="↓ " Visibility="Collapsed" Foreground="#4CAF50" FontWeight="Bold"/>
-                        <TextBlock Name="txtBadgeVersion" Text="v1.0.0" Foreground="#B0B0B0" FontSize="11" FontWeight="SemiBold"/>
+                        <TextBlock Name="txtBadgeArrow" Text="↓ " Visibility="Collapsed" Foreground="#00FF00" FontWeight="Bold" FontSize="16"/>
+                        <TextBlock Name="txtBadgeVersion" Text="v1.0.0" Foreground="#B0B0B0" FontSize="16" FontWeight="Black"/>
                     </StackPanel>
                 </Border>
             </DockPanel>
@@ -194,7 +194,7 @@
                         <StackPanel>
                             <TextBlock Margin="0,4,0,4" Foreground="#BBBBBB" FontSize="11" Text="Activation Mode:"/>
                             <WrapPanel Orientation="Horizontal">
-                                <Button Name="btnModeRightLeft" Content="Hold Right + Left Mouse" MinWidth="160" Background="#4CAF50" Click="btnModeRightLeft_Click" Margin="0,0,8,8"/>
+                                <Button Name="btnModeRightLeft" Content="Hold Right + Left Mouse" MinWidth="160" Background="#00FF00" Click="btnModeRightLeft_Click" Margin="0,0,8,8"/>
                                 <Button Name="btnModeLeftOnly" Content="Hold Left Mouse" MinWidth="140" Background="Black" Click="btnModeLeftOnly_Click" Margin="0,0,8,8"/>
                             </WrapPanel>
 
@@ -207,13 +207,13 @@
                                 <WrapPanel Grid.Column="1">
                                     <TextBox Name="txtToggleShortcut" Width="100" IsReadOnly="True" HorizontalContentAlignment="Center"/>
                                     <Button Name="btnSetToggleShortcut" Content="Set Key" MinWidth="70" Margin="8,0,0,0" Background="Black" Click="btnSetToggleShortcut_Click"/>
-                                    <Button Name="btnClearToggleShortcut" Content="Clear" MinWidth="60" Margin="8,0,0,0" Background="#FF3B30" Click="btnClearToggleShortcut_Click"/>
+                                    <Button Name="btnClearToggleShortcut" Content="Clear" MinWidth="60" Margin="8,0,0,0" Background="#FF0000" Click="btnClearToggleShortcut_Click"/>
                                 </WrapPanel>
                             </Grid>
 
                             <WrapPanel Orientation="Horizontal" Margin="0,4,0,0" VerticalAlignment="Center">
                                 <Button Name="btnStart" Content="Start" MinWidth="100" Background="Black" Click="btnStart_Click" Margin="0,0,8,8"/>
-                                <Button Name="btnStop" Content="Stop" MinWidth="100" Background="#FF3B30" Click="btnStop_Click" Margin="0,0,8,8"/>
+                                <Button Name="btnStop" Content="Stop" MinWidth="100" Background="#FF0000" Click="btnStop_Click" Margin="0,0,8,8"/>
                                 <Button Name="btnHide" Content="Hide to Tray" MinWidth="110" Background="Black" Click="btnHide_Click" Margin="0,0,8,8"/>
                             </WrapPanel>
                         </StackPanel>
@@ -246,17 +246,17 @@
                                     <TextBox Name="txtShortcutKey" IsReadOnly="True" ToolTip="Click 'Set Key' and press a key." HorizontalContentAlignment="Center" Margin="0,0,0,4"/>
                                     <UniformGrid Columns="2">
                                         <Button Name="btnSetShortcut" Content="Set Key" Margin="0,0,4,0" Click="btnSetShortcut_Click"/>
-                                        <Button Name="btnDeleteShortcut" Content="Clear Key" Background="#FF3B30" Click="btnDeleteShortcut_Click"/>
+                                        <Button Name="btnDeleteShortcut" Content="Clear Key" Background="#FF0000" Click="btnDeleteShortcut_Click"/>
                                     </UniformGrid>
                                 </StackPanel>
                             </Grid>
 
                             <!-- Action Buttons -->
                             <UniformGrid Columns="2" Margin="0,8,0,0">
-                                <Button Name="btnSavePreset" Content="Save / Update" Background="#4CAF50" Click="btnSavePreset_Click" Margin="0,0,4,4"/>
-                                <Button Name="btnDeletePreset" Content="Delete Preset" Background="#FF3B30" Click="btnDeletePreset_Click" Margin="4,0,0,4"/>
+                                <Button Name="btnSavePreset" Content="Save / Update" Background="#00FF00" Click="btnSavePreset_Click" Margin="0,0,4,4"/>
+                                <Button Name="btnDeletePreset" Content="Delete Preset" Background="#FF0000" Click="btnDeletePreset_Click" Margin="4,0,0,4"/>
                             </UniformGrid>
-                            <Button Name="btnDeleteAllShortcuts" Content="Clear All Global Shortcuts" Background="#FF3B30" Click="btnDeleteAllShortcuts_Click" Margin="0,4,0,0" ToolTip="Remove all shortcut keys from every preset."/>
+                            <Button Name="btnDeleteAllShortcuts" Content="Clear All Global Shortcuts" Background="#FF0000" Click="btnDeleteAllShortcuts_Click" Margin="0,4,0,0" ToolTip="Remove all shortcut keys from every preset."/>
 
                         </StackPanel>
                     </GroupBox>
@@ -272,9 +272,7 @@
                     <!-- App Info & Update Section -->
                     <GroupBox Header="System Status" Style="{StaticResource CardGroupBox}">
                         <StackPanel>
-                            <TextBlock Name="btnUpdateStatusTitle" Text="LATEST" FontSize="24" FontWeight="Black" Foreground="#4CAF50" HorizontalAlignment="Center" Margin="0,4" Cursor="Hand" MouseLeftButtonDown="UpdateNow_Click"/>
-                            
-                            <Grid Margin="0,8,0,0">
+                            <Grid Margin="0,4,0,8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="90"/>
                                     <ColumnDefinition Width="*"/>
@@ -289,9 +287,23 @@
                                 <StackPanel Grid.Column="1">
                                     <TextBlock Text="GHOSTWing Pro" FontSize="11" Foreground="#B0B0B0" FontWeight="SemiBold" Margin="0,2"/>
                                     <TextBlock Name="txtAppVersion" Text="1.0.0" FontSize="11" Foreground="#B0B0B0" FontWeight="SemiBold" Margin="0,2"/>
-                                    <TextBlock Name="txtUpdateStatus" Text="Using Latest version" FontSize="11" Foreground="#B0B0B0" FontWeight="SemiBold" Margin="0,2"/>
+                                    <TextBlock Name="txtUpdateStatus" Text="Ready to check" FontSize="11" Foreground="#B0B0B0" FontWeight="SemiBold" Margin="0,2"/>
                                 </StackPanel>
                             </Grid>
+
+                            <Border BorderBrush="#333333" BorderThickness="0,1,0,0" Margin="0,4,0,8"/>
+
+                            <TextBlock Name="btnUpdateStatusTitle" Text="Check Update" FontSize="22" FontWeight="Black" Foreground="#B0B0B0" HorizontalAlignment="Center" Margin="0,4" Cursor="Hand" MouseLeftButtonDown="CheckUpdate_Click">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Opacity" Value="0.8"/>
+                                            </Trigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
                         </StackPanel>
                     </GroupBox>
                 </StackPanel>
