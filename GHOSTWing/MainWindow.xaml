@@ -972,7 +972,7 @@
                                                 <TextBlock Text="GHOSTWing - GHOST-404" Foreground="#FAFAFA" FontWeight="Black" FontSize="14" HorizontalAlignment="Center"/>
                                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                     <TextBlock Text="Version " Foreground="#71717A" FontSize="10"/>
-                                                    <TextBlock Name="txtSettingsVersion" Text="1.0.1" Foreground="#10B981" FontSize="10" FontWeight="Bold"/>
+                                                    <TextBlock Name="txtSettingsVersion" Text="1.0.2" Foreground="#10B981" FontSize="10" FontWeight="Bold"/>
                                                 </StackPanel>
                                                 <TextBlock Text="© 2026 GHOST-404" Foreground="#3F3F46" FontSize="9" Margin="0,5,0,0" HorizontalAlignment="Center"/>
                                             </StackPanel>

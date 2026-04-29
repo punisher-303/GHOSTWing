@@ -3,6 +3,24 @@
 All notable changes to the **GHOSTWing** project will be documented in this file.
 
 ---
+ 
+ ## [1.0.2] - 2026-04-29 (The UX & Precision Update)
+ 
+ ### 🚀 Added
+ 
+ - **ADS Hide Feature**: New "Hide on ADS" toggle in the crosshair tab. Automatically hides the crosshair while holding the right mouse button to keep your view clean when aiming down sights.
+ - **Unique Device Identification (UUID)**: Implemented a persistent, hardware-locked UUID system (Motherboard + CPU + Disk) for user licensing and future premium features.
+ - **Slim Modern Scrollbars**: Replaced bulky default Windows scrollbars with sleek, dark-themed 6px scrollbars that blend perfectly with the industrial design.
+ - **Independent Tab Scrolling**: Every tab (Recoil, Crosshair, Settings) is now independently scrollable, ensuring all options are accessible on any screen size.
+ 
+ ### 🛠️ Fixed
+ 
+ - **Crosshair Default Color**: Set the default crosshair color to Red for better initial visibility.
+ - **Preview Box Scaling**: Fixed the crosshair preview border to dynamically stretch and match the height of the customizer panel for a perfectly balanced UI.
+ - **Sidebar Scrolling**: Added scroll support to the sidebar menu for future-proofing.
+ 
+ ---
+24: 
 
 ## [1.0.1] - 2026-04-29 (Performance & Stability Update)
 
