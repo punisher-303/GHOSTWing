@@ -16,7 +16,9 @@ namespace GHOSTWing
         private const int WM_SYSKEYUP = 0x0105;
 
         private const int WM_LBUTTONDOWN = 0x0201;
+        private const int WM_LBUTTONUP = 0x0202;
         private const int WM_RBUTTONDOWN = 0x0204;
+        private const int WM_RBUTTONUP = 0x0205;
         private const int WM_MBUTTONDOWN = 0x0207;
         private const int WM_XBUTTONDOWN = 0x020B;
 
@@ -68,6 +70,10 @@ namespace GHOSTWing
         private static IntPtr _mouseHookID = IntPtr.Zero;
 
         public static event Action<string>? OnShortcutPressed;
+
+        // Button state tracking
+        public static bool IsLeftButtonPressed { get; private set; }
+        public static bool IsRightButtonPressed { get; private set; }
 
         // Modifier state tracking
         private static bool isCtrlPressed = false;
@@ -144,6 +150,13 @@ namespace GHOSTWing
             if (nCode >= 0)
             {
                 int msg = (int)wParam;
+
+                // Track button states for the recoil engine
+                if (msg == WM_LBUTTONDOWN) IsLeftButtonPressed = true;
+                else if (msg == WM_LBUTTONUP) IsLeftButtonPressed = false;
+                else if (msg == WM_RBUTTONDOWN) IsRightButtonPressed = true;
+                else if (msg == WM_RBUTTONUP) IsRightButtonPressed = false;
+
                 if (msg == WM_MBUTTONDOWN || msg == WM_XBUTTONDOWN)
                 {
                     string buttonName = "";

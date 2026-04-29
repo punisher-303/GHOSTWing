@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using Microsoft.Win32;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
+using System.Windows.Shapes;
 
 namespace GHOSTWing
 {
@@ -52,6 +53,14 @@ namespace GHOSTWing
         private double _cachedVertical = 0;
         private double _cachedHorizontal = 0;
         private int _cachedDelay = 5;
+
+        private CrosshairWindow? crosshairWindow;
+
+        // ADS Hide feature
+        private bool _adsHideEnabled = false;
+        private Thread? _adsWatchThread;
+        private bool _adsWatchRunning = false;
+        private const int VK_RBUTTON = 0x02;
 
 
 
@@ -154,6 +163,9 @@ namespace GHOSTWing
             txtAppVersion.Text = AppVersion;
             txtBadgeVersion.Text = "v" + AppVersion;
             
+            // Initialize Unique Device ID
+            txtUUID.Text = HardwareIdManager.GetDeviceId();
+            
             // Initialize Streamer Mode (Combined Stealth)
             btnStreamerMode.IsChecked = settingsManager.Settings.IsStreamerMode;
             UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
@@ -172,24 +184,68 @@ namespace GHOSTWing
             _cachedDelay = (int)sliderDelay.Value;
 
             _ = CheckForUpdates(); // Start silent background check on startup
+
+            // Initialize Professional Settings UI
+            chkRunOnStartup.IsChecked = settingsManager.Settings.RunOnStartup;
+            chkMinimizeToTray.IsChecked = settingsManager.Settings.MinimizeToTray;
+            chkStartMinimized.IsChecked = settingsManager.Settings.StartMinimized;
+            sliderOpacity.Value = settingsManager.Settings.AppOpacity;
+            this.Opacity = settingsManager.Settings.AppOpacity;
+            txtSettingsVersion.Text = AppVersion;
+
+            // Apply Performance settings
+            UpdateProcessPriority();
+            
+            // Handle Start Minimized
+            if (settingsManager.Settings.StartMinimized)
+            {
+                this.WindowState = WindowState.Minimized;
+                if (settingsManager.Settings.MinimizeToTray) this.Hide();
+            }
+
+            // Ensure first page is loaded correctly on startup
+            if (MainTabControl != null) MainTabControl.SelectedIndex = 0;
+        }
+
+        private void btnDownloadNow_Click(object sender, RoutedEventArgs e)
+        {
+            OpenDownloadLink();
+            HideUpdateModal();
+        }
+
+        private void btnLater_Click(object sender, RoutedEventArgs e)
+        {
+            HideUpdateModal();
+        }
+
+        private void HideUpdateModal()
+        {
+            var sb = (System.Windows.Media.Animation.Storyboard)this.Resources["HideUpdateModalAnim"];
+            sb.Begin();
         }
 
         private async void CheckUpdate_Click(object sender, MouseButtonEventArgs e)
         {
             try
             {
-                if (btnUpdateStatusTitle.Text == "UPDATE NOW")
+                if (btnUpdateStatusTitle.Text.Contains("UPDATE NOW"))
                 {
                     OpenDownloadLink();
                     return;
                 }
+                
+                if (btnUpdateStatusTitle.Text.Contains("LATEST"))
+                {
+                    ShowNotification("You are using the latest version!", "Success");
+                    return;
+                }
 
-                await CheckForUpdates();
+                await CheckForUpdates(false); // Manual check
             }
             catch { }
         }
 
-        private async Task CheckForUpdates()
+        private async Task CheckForUpdates(bool isStartup = true)
         {
             try
             {
@@ -208,6 +264,8 @@ namespace GHOSTWing
                     {
                         string latestVersion = doc.RootElement.TryGetProperty("version", out var v) ? v.GetString() ?? AppVersion : AppVersion;
                         downloadUrl = doc.RootElement.TryGetProperty("download_url", out var d) ? d.GetString() ?? downloadUrl : downloadUrl;
+                        
+                        // ... (Footer text and color logic remains the same)
                         string footerText = doc.RootElement.TryGetProperty("footer_text", out var f) ? f.GetString() ?? "" : "";
                         string footerColor = doc.RootElement.TryGetProperty("footer_color", out var fc) ? fc.GetString() ?? "" : "";
 
@@ -237,6 +295,14 @@ namespace GHOSTWing
                             txtBadgeVersion.Text = "v" + latestVersion + " ↓";
                             txtBadgeVersion.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#1DB954") ?? System.Windows.Media.Brushes.Green;
                             txtBadgeArrow.Visibility = Visibility.Collapsed; // We added it to the text directly
+                            
+                            if (isStartup)
+                            {
+                                txtCurrentVersionModal.Text = "v" + AppVersion;
+                                txtLatestVersionModal.Text = "v" + latestVersion;
+                                var sb = (System.Windows.Media.Animation.Storyboard)this.Resources["ShowUpdateModalAnim"];
+                                sb.Begin();
+                            }
                         }
                         else
                         {
@@ -346,9 +412,21 @@ namespace GHOSTWing
 
         private void MainWindow_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
         {
+            if (settingsManager.Settings.MinimizeToTray)
+            {
+                e.Cancel = true;
+                this.Hide();
+                return;
+            }
+
             GlobalInputHook.Stop();
             GlobalInputHook.OnShortcutPressed -= GlobalInputHook_OnShortcutPressed;
             recoilActive = false;
+            if (crosshairWindow != null)
+            {
+                crosshairWindow.Close();
+                crosshairWindow = null;
+            }
             if (_notifyIcon != null)
             {
                 _notifyIcon.Visible = false;
@@ -383,8 +461,8 @@ namespace GHOSTWing
                 // Check for Toggle shortcut
                 if (!string.IsNullOrEmpty(settingsManager.Settings.ToggleShortcut) && shortcut == settingsManager.Settings.ToggleShortcut)
                 {
-                    if (recoilActive) btnStop_Click(null, null);
-                    else btnStart_Click(null, null);
+                    if (recoilActive) StopRecoil();
+                    else StartRecoil();
                     return;
                 }
 
@@ -561,7 +639,19 @@ namespace GHOSTWing
             txtToggleShortcut.Text = "";
         }
 
-        private void btnStart_Click(object? sender, RoutedEventArgs? e)
+        private void btnRecoilStatus_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnRecoilStatus.IsChecked == true)
+            {
+                StartRecoil();
+            }
+            else
+            {
+                StopRecoil();
+            }
+        }
+
+        private void StartRecoil()
         {
             if (!recoilActive)
             {
@@ -569,32 +659,293 @@ namespace GHOSTWing
                 recoilThread = new Thread(AutoRecoilLoop) { IsBackground = true, Priority = ThreadPriority.Highest };
                 recoilThread.Start();
 
-                btnStart.Content = "Running...";
-                btnStart.Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#4CAF50"));
-                btnStop.Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FF3B30"));
+                btnRecoilStatus.IsChecked = true;
+                txtEngineStatus.Text = "RUNNING";
+                txtEngineStatus.Foreground = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1DB954"));
             }
         }
 
-        private void btnStop_Click(object? sender, RoutedEventArgs? e)
+        private void StopRecoil()
         {
             recoilActive = false;
-            btnStart.Content = "Start";
-            btnStart.Background = new SolidColorBrush(Colors.Black);
-            btnStop.Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#FF3B30"));
+            btnRecoilStatus.IsChecked = false;
+            txtEngineStatus.Text = "STOPPED";
+            txtEngineStatus.Foreground = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#D32F2F"));
         }
 
-        private void btnModeRightLeft_Click(object? sender, RoutedEventArgs? e)
+        private void rbModeRightLeft_Checked(object sender, RoutedEventArgs e)
         {
             currentActivationMode = ActivationMode.RightAndLeft;
-            btnModeRightLeft.Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#4CAF50"));
-            btnModeLeftOnly.Background = new SolidColorBrush(Colors.Black);
         }
 
-        private void btnModeLeftOnly_Click(object? sender, RoutedEventArgs? e)
+        private void rbModeLeftOnly_Checked(object sender, RoutedEventArgs e)
         {
             currentActivationMode = ActivationMode.LeftOnly;
-            btnModeLeftOnly.Background = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#4CAF50"));
-            btnModeRightLeft.Background = new SolidColorBrush(Colors.Black);
+        }
+
+        private void NavRecoil_Checked(object sender, RoutedEventArgs e)
+        {
+            if (MainTabControl != null) MainTabControl.SelectedIndex = 0;
+        }
+
+        private void NavCrosshair_Checked(object sender, RoutedEventArgs e)
+        {
+            if (MainTabControl != null)
+            {
+                MainTabControl.SelectedIndex = 1;
+                UpdateCrosshairPreview();
+            }
+        }
+
+        private void NavSettings_Checked(object sender, RoutedEventArgs e)
+        {
+            if (MainTabControl != null) MainTabControl.SelectedIndex = 2;
+        }
+
+        private void btnCrosshairEnable_Click(object sender, RoutedEventArgs e)
+        {
+            if (btnCrosshairEnable.IsChecked == true)
+            {
+                if (crosshairWindow == null)
+                {
+                    crosshairWindow = new CrosshairWindow();
+                }
+                crosshairWindow.Show();
+                UpdateCrosshairOverlay();
+                
+                // Ensure stealth mode is applied if active
+                if (settingsManager.Settings.IsStreamerMode)
+                {
+                    UpdateStreamerMode(true);
+                }
+
+                // Resume ADS watch if enabled
+                if (_adsHideEnabled) StartAdsWatch();
+            }
+            else
+            {
+                StopAdsWatch();
+                crosshairWindow?.Hide();
+            }
+        }
+
+        private void chkHideOnADS_Click(object sender, RoutedEventArgs e)
+        {
+            _adsHideEnabled = chkHideOnADS.IsChecked == true;
+            if (_adsHideEnabled && btnCrosshairEnable.IsChecked == true)
+                StartAdsWatch();
+            else
+                StopAdsWatch();
+        }
+
+        private void StartAdsWatch()
+        {
+            if (_adsWatchRunning) return;
+            _adsWatchRunning = true;
+            _adsWatchThread = new Thread(() =>
+            {
+                bool wasHidden = false;
+                while (_adsWatchRunning)
+                {
+                    bool rightHeld = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
+                    if (rightHeld && !wasHidden)
+                    {
+                        wasHidden = true;
+                        Dispatcher.Invoke(() => crosshairWindow?.Hide());
+                    }
+                    else if (!rightHeld && wasHidden)
+                    {
+                        wasHidden = false;
+                        Dispatcher.Invoke(() =>
+                        {
+                            if (btnCrosshairEnable.IsChecked == true)
+                                crosshairWindow?.Show();
+                        });
+                    }
+                    Thread.Sleep(8); // ~120Hz polling
+                }
+            }) { IsBackground = true, Priority = ThreadPriority.AboveNormal };
+            _adsWatchThread.Start();
+        }
+
+        private void StopAdsWatch()
+        {
+            _adsWatchRunning = false;
+        }
+
+        private void CrosshairSetting_Changed(object sender, SelectionChangedEventArgs e)
+        {
+            UpdateCrosshairOverlay();
+        }
+
+        private void CrosshairSetting_Changed(object sender, RoutedEventArgs e)
+        {
+            UpdateCrosshairOverlay();
+        }
+
+        private void UpdateCrosshairOverlay()
+        {
+            UpdateCrosshairPreview();
+            if (crosshairWindow == null || !crosshairWindow.IsVisible || comboCrosshairShape == null ||
+                sliderCrosshairSize == null || sliderCrosshairThickness == null || 
+                sliderCrosshairGap == null || sliderCrosshairOpacity == null) return;
+
+            string shape = (comboCrosshairShape.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Cross";
+            System.Windows.Media.Color color = GetSelectedCrosshairColor();
+            
+            crosshairWindow.UpdateCrosshair(
+                shape,
+                color,
+                sliderCrosshairSize.Value,
+                sliderCrosshairThickness.Value,
+                sliderCrosshairGap.Value,
+                sliderCrosshairOpacity.Value,
+                chkCrosshairDot.IsChecked == true,
+                chkCrosshairOutline.IsChecked == true
+            );
+        }
+
+        private System.Windows.Media.Color GetSelectedCrosshairColor()
+        {
+            if (comboCrosshairColor == null) return Colors.Green;
+            string colorName = (comboCrosshairColor.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Green";
+            switch (colorName)
+            {
+                case "Red": return Colors.Red;
+                case "Cyan": return Colors.Cyan;
+                case "White": return Colors.White;
+                case "Yellow": return Colors.Yellow;
+                default: return Colors.Green;
+            }
+        }
+
+        private void UpdateCrosshairPreview()
+        {
+            if (CrosshairPreview == null || comboCrosshairShape == null || comboCrosshairColor == null ||
+                sliderCrosshairSize == null || sliderCrosshairThickness == null || 
+                sliderCrosshairGap == null || sliderCrosshairOpacity == null ||
+                chkCrosshairDot == null || chkCrosshairOutline == null) return;
+            
+            CrosshairPreview.Children.Clear();
+            string shape = (comboCrosshairShape.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "Cross";
+            System.Windows.Media.Color color = GetSelectedCrosshairColor();
+            
+            DrawCrosshairOnCanvas(
+                CrosshairPreview,
+                shape,
+                color,
+                sliderCrosshairSize.Value,
+                sliderCrosshairThickness.Value,
+                sliderCrosshairGap.Value,
+                sliderCrosshairOpacity.Value,
+                chkCrosshairDot.IsChecked == true,
+                chkCrosshairOutline.IsChecked == true
+            );
+        }
+
+        private void DrawCrosshairOnCanvas(Canvas canvas, string shape, System.Windows.Media.Color color, double size, double thickness, double gap, double opacity, bool dot, bool outline)
+        {
+            canvas.Opacity = opacity / 100.0;
+            
+            // Re-use logic from CrosshairWindow but draw on the provided canvas
+            // We'll use relative positioning around the center of the canvas
+            double cx = canvas.Width / 2;
+            double cy = canvas.Height / 2;
+
+            if (outline)
+            {
+                DrawShapeOnCanvas(canvas, shape, Colors.Black, size, thickness + 2, gap, true, cx, cy);
+            }
+            DrawShapeOnCanvas(canvas, shape, color, size, thickness, gap, false, cx, cy);
+
+            if (dot && shape != "Dot")
+            {
+                if (outline)
+                {
+                    Ellipse dotOutline = new Ellipse
+                    {
+                        Width = thickness + 3,
+                        Height = thickness + 3,
+                        Fill = System.Windows.Media.Brushes.Black
+                    };
+                    Canvas.SetLeft(dotOutline, cx - dotOutline.Width / 2);
+                    Canvas.SetTop(dotOutline, cy - dotOutline.Height / 2);
+                    canvas.Children.Add(dotOutline);
+                }
+
+                Ellipse dotShape = new Ellipse
+                {
+                    Width = thickness + 1,
+                    Height = thickness + 1,
+                    Fill = new SolidColorBrush(color)
+                };
+                Canvas.SetLeft(dotShape, cx - dotShape.Width / 2);
+                Canvas.SetTop(dotShape, cy - dotShape.Height / 2);
+                canvas.Children.Add(dotShape);
+            }
+        }
+
+        private void DrawShapeOnCanvas(Canvas canvas, string shape, System.Windows.Media.Color color, double size, double thickness, double gap, bool isOutline, double cx, double cy)
+        {
+            System.Windows.Media.Brush brush = new SolidColorBrush(color);
+
+            if (shape.Contains("Cross"))
+            {
+                // Top
+                AddLineToCanvas(canvas, cx, cy - gap, cx, cy - gap - size, brush, thickness);
+                // Bottom
+                AddLineToCanvas(canvas, cx, cy + gap, cx, cy + gap + size, brush, thickness);
+                // Left
+                AddLineToCanvas(canvas, cx - gap, cy, cx - gap - size, cy, brush, thickness);
+                // Right
+                AddLineToCanvas(canvas, cx + gap, cy, cx + gap + size, cy, brush, thickness);
+            }
+
+            if (shape.Contains("Circle"))
+            {
+                Ellipse circle = new Ellipse
+                {
+                    Width = size * 2,
+                    Height = size * 2,
+                    Stroke = brush,
+                    StrokeThickness = thickness
+                };
+                Canvas.SetLeft(circle, cx - size);
+                Canvas.SetTop(circle, cy - size);
+                canvas.Children.Add(circle);
+            }
+
+            if (shape == "Dot")
+            {
+                double dotSize = Math.Max(thickness + 1, 3);
+                if (isOutline) dotSize += 2;
+
+                Ellipse dot = new Ellipse
+                {
+                    Width = dotSize,
+                    Height = dotSize,
+                    Fill = brush
+                };
+                Canvas.SetLeft(dot, cx - dotSize / 2);
+                Canvas.SetTop(dot, cy - dotSize / 2);
+                canvas.Children.Add(dot);
+            }
+        }
+
+        private void AddLineToCanvas(Canvas canvas, double x1, double y1, double x2, double y2, System.Windows.Media.Brush brush, double thickness)
+        {
+            System.Windows.Shapes.Line line = new System.Windows.Shapes.Line
+            {
+                X1 = x1,
+                Y1 = y1,
+                X2 = x2,
+                Y2 = y2,
+                Stroke = brush,
+                StrokeThickness = thickness,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round
+            };
+            canvas.Children.Add(line);
         }
 
         private void btnHide_Click(object? sender, RoutedEventArgs? e)
@@ -617,9 +968,21 @@ namespace GHOSTWing
         {
             try
             {
-                var helper = new WindowInteropHelper(this);
                 uint affinity = enabled ? WDA_EXCLUDEFROMCAPTURE : WDA_NONE;
-                SetWindowDisplayAffinity(helper.Handle, affinity);
+                
+                // Protect main window
+                var mainHelper = new WindowInteropHelper(this);
+                SetWindowDisplayAffinity(mainHelper.Handle, affinity);
+
+                // Protect crosshair window if it exists
+                if (crosshairWindow != null)
+                {
+                    var crosshairHelper = new WindowInteropHelper(crosshairWindow);
+                    if (crosshairHelper.Handle != IntPtr.Zero)
+                    {
+                        SetWindowDisplayAffinity(crosshairHelper.Handle, affinity);
+                    }
+                }
             }
             catch { }
         }
@@ -685,8 +1048,9 @@ namespace GHOSTWing
                 {
                     sw.Restart();
 
-                    bool leftPressed = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-                    bool rightPressed = (GetAsyncKeyState(0x02) & 0x8000) != 0;
+                    // Use high-priority hook states instead of polling GetAsyncKeyState
+                    bool leftPressed = GlobalInputHook.IsLeftButtonPressed;
+                    bool rightPressed = GlobalInputHook.IsRightButtonPressed;
 
                     bool shouldActivate = false;
                     if (currentActivationMode == ActivationMode.RightAndLeft)
@@ -725,11 +1089,15 @@ namespace GHOSTWing
                     int targetDelay = _cachedDelay;
                     if (targetDelay < 1) targetDelay = 1;
                     
-                    // Turbo Busy-Wait: 100% CPU active for perfect precision
-                    // This prevents Windows from ever putting the thread to sleep when minimized
+                    // Hybrid Sleep/Spin: Best of both worlds
+                    // Sleep for the majority of the time to save CPU, then spin-wait the last 1ms for micro-precision
+                    int sleepTime = targetDelay - 1;
+                    if (sleepTime > 0) Thread.Sleep(sleepTime);
+                    
                     while (sw.ElapsedMilliseconds < targetDelay)
                     {
-                        // Just stay active
+                        // Final micro-precision spin
+                        Thread.SpinWait(10);
                     }
                 }
             }
@@ -770,6 +1138,104 @@ namespace GHOSTWing
             public uint dwFlags;
             public uint time;
             public IntPtr dwExtraInfo;
+        }
+
+        private void SettingChanged_Click(object sender, RoutedEventArgs e)
+        {
+            if (settingsManager == null || chkRunOnStartup == null) return;
+
+            settingsManager.Settings.RunOnStartup = chkRunOnStartup.IsChecked == true;
+            settingsManager.Settings.MinimizeToTray = chkMinimizeToTray.IsChecked == true;
+            settingsManager.Settings.StartMinimized = chkStartMinimized.IsChecked == true;
+            settingsManager.Settings.PriorityClass = (comboPriority.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "High";
+            
+            settingsManager.Save();
+            UpdateStartupRegistration();
+            UpdateProcessPriority();
+        }
+
+        private void sliderOpacity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (settingsManager == null) return;
+            this.Opacity = e.NewValue;
+            settingsManager.Settings.AppOpacity = e.NewValue;
+            settingsManager.Save();
+        }
+
+        private void btnResetSettings_Click(object sender, RoutedEventArgs e)
+        {
+            var result = System.Windows.MessageBox.Show("Are you sure you want to reset all settings to default?", "GHOSTWing Reset", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (result == MessageBoxResult.Yes)
+            {
+                settingsManager.Settings = new AppSettings();
+                settingsManager.Save();
+                System.Windows.MessageBox.Show("Settings reset. Please restart the application for all changes to take effect.", "GHOSTWing", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void UpdateStartupRegistration()
+        {
+            try
+            {
+                using (RegistryKey key = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true)!)
+                {
+                    if (settingsManager.Settings.RunOnStartup)
+                    {
+                        key.SetValue("GHOSTWing", $"\"{Process.GetCurrentProcess().MainModule?.FileName}\"");
+                    }
+                    else
+                    {
+                        if (key.GetValue("GHOSTWing") != null) key.DeleteValue("GHOSTWing");
+                    }
+                }
+            }
+            catch { }
+        }
+
+        private void UpdateProcessPriority()
+        {
+            try
+            {
+                var priority = settingsManager.Settings.PriorityClass;
+                var proc = Process.GetCurrentProcess();
+                switch (priority)
+                {
+                    case "Normal": proc.PriorityClass = ProcessPriorityClass.Normal; break;
+                    case "Above Normal": proc.PriorityClass = ProcessPriorityClass.AboveNormal; break;
+                    case "High": proc.PriorityClass = ProcessPriorityClass.High; break;
+                    case "Realtime (Not Recommended)": proc.PriorityClass = ProcessPriorityClass.RealTime; break;
+                    default: proc.PriorityClass = ProcessPriorityClass.High; break;
+                }
+            }
+            catch { }
+        }
+
+        private void btnMinimize_Click(object sender, RoutedEventArgs e)
+        {
+            this.WindowState = WindowState.Minimized;
+        }
+
+        private void btnMaximize_Click(object sender, RoutedEventArgs e)
+        {
+            if (this.WindowState == WindowState.Maximized)
+                this.WindowState = WindowState.Normal;
+            else
+                this.WindowState = WindowState.Maximized;
+        }
+
+        private void CopyUUID_Click(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                System.Windows.Clipboard.SetText(txtUUID.Text);
+                ShowNotification("Device ID copied to clipboard!", "Success");
+            }
+            catch { }
+        }
+
+        private void btnClose_Click(object sender, RoutedEventArgs e)
+        {
+            this.Close();
         }
     }
 

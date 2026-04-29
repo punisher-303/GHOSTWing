@@ -8,6 +8,13 @@ namespace GHOSTWing
     {
         public string ToggleShortcut { get; set; } = "";
         public bool IsStreamerMode { get; set; } = false;
+        
+        // System Settings
+        public bool RunOnStartup { get; set; } = false;
+        public bool MinimizeToTray { get; set; } = true;
+        public bool StartMinimized { get; set; } = false;
+        public string PriorityClass { get; set; } = "High";
+        public double AppOpacity { get; set; } = 1.0;
     }
 
     public class SettingsManager
@@ -17,7 +24,7 @@ namespace GHOSTWing
             "GHOSTWing",
             "settings.json");
 
-        public AppSettings Settings { get; private set; } = new AppSettings();
+        public AppSettings Settings { get; set; } = new AppSettings();
 
         public void Load()
         {

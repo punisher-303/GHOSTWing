@@ -15,4 +15,8 @@
     <Resource Include="assets\icon.ico" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Management" Version="10.0.7" />
+  </ItemGroup>
+
 </Project>

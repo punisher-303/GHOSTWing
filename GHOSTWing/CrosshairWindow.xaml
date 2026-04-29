@@ -1,0 +1,10 @@
+<Window x:Class="GHOSTWing.CrosshairWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GHOSTWing Crosshair" Height="300" Width="300" 
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" IsHitTestVisible="False">
+    <Grid>
+        <Canvas x:Name="CrosshairCanvas" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+    </Grid>
+</Window>
