@@ -18,7 +18,7 @@
 
 ---
 
-## 🎮 Supported Games
+### 🎮 Supported Games
 
 GHOSTWing works with any game that supports raw or standard mouse input, including:
 
@@ -29,17 +29,13 @@ GHOSTWing works with any game that supports raw or standard mouse input, includi
 - **Apex Legends**
 - **All First-Person / Third-Person Shooters**
 
----
-
-## 🛑 Important Disclaimer & Safety
+### 🛑 Important Disclaimer & Safety
 
 **GHOSTWing is NOT a "hack" or "cheat" in the traditional sense.**
 
 - **Pure Automation**: It does not inject code, modify game files, or read game memory. It is a high-precision **mouse automation utility** that simulates natural input movement via standard Windows APIs.
 - **Stealth First**: While it is designed to be as stealthy as possible (using Streamer Mode and low-level hooks), using any form of input automation may violate the **Terms of Service (ToS)** of certain competitive games.
 - **Use Responsibly**: This software is provided "as is". The developers are not responsible for any account actions or damages resulting from its use.
-
----
 
 ## ✨ Key Features
 
