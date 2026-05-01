@@ -181,10 +181,18 @@ h1, h2, h3 {
 }
 
 .hero-logo {
-    max-width: 350px;
+    max-width: 400px;
     border: none;
-    box-shadow: 0 0 50px var(--accent-glow);
-    filter: drop-shadow(0 0 20px var(--accent-glow));
+    background: transparent;
+    box-shadow: none;
+    filter: drop-shadow(0 20px 30px var(--accent-glow));
+    transform: perspective(1000px) rotateY(-10deg) rotateX(5deg);
+    transition: 0.5s ease;
+}
+
+.hero-logo:hover {
+    transform: perspective(1000px) rotateY(0deg) rotateX(0deg) scale(1.1);
+    filter: drop-shadow(0 0 50px var(--accent));
 }
 
 @keyframes float {
