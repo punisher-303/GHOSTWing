@@ -61,8 +61,6 @@ GHOSTWing works with any game that supports raw or standard mouse input, includi
 - **Modern UI**: Dark-themed, high-contrast interface designed for low light environments.
 - **Zero Installation**: Portable executable that stores settings in `%APPDATA%\GHOSTWing` for persistence.
 
----
-
 ## 🚀 Getting Started
 
 ### Installation
@@ -81,8 +79,6 @@ GHOSTWing is portable and requires no installation.
 4. **Enable Stealth**: Toggle **Streamer Mode** in the Control Panel to hide the app from your screen recordings and taskbar.
 5. **Activate**: Use your global **Toggle Key** to start/stop the controller while in-game.
 
----
-
 ## 💻 Developer Information
 
 ### Tech Stack
@@ -99,8 +95,6 @@ To build the project from source, ensure you have the .NET 10 SDK installed:
 dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
----
-
 ## 📂 Configuration Storage
 
 Settings and presets are securely stored in the following directory:
@@ -110,8 +104,6 @@ Files included:
 
 - `settings.json`: Global application preferences and stealth states.
 - `Presets/`: A directory containing your custom weapon JSON files.
-
----
 
 **Produced by GHOST-404**
 *Empowering precision through code.*
