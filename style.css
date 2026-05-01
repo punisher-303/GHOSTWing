@@ -193,24 +193,30 @@ h1, h2, h3 {
 .plan-desc { color: var(--text-dim); font-size: 0.75rem; margin-bottom: 30px; }
 
 .features-list { text-align: left; margin-bottom: 40px; }
-.features-list div { font-size: 0.85rem; margin-bottom: 12px; color: #DDD; }
-.features-list span { color: var(--accent); margin-right: 10px; font-weight: bold; }
+.features-list div { font-size: 0.75rem; margin-bottom: 10px; font-weight: 500; }
+
+.features-list .check span { color: #10B981; margin-right: 12px; font-weight: bold; }
+.features-list .cross span { color: #EF4444; margin-right: 12px; font-weight: bold; }
+.features-list .cross { color: #52525B; } /* Dim text for disabled features */
 
 .btn-plan {
     display: block;
     width: 100%;
-    padding: 15px;
-    border-radius: 6px;
+    padding: 16px;
+    border-radius: 8px;
     text-decoration: none;
     font-weight: 900;
     font-size: 0.75rem;
     text-transform: uppercase;
-    background: #151518;
-    color: #FFF;
+    transition: 0.3s;
+    text-align: center;
 }
 
-.plan-card.gold .btn-plan { background: var(--gold); color: #000; }
-.plan-card.diamond .btn-plan { background: var(--diamond); color: #000; }
+.btn-free { background: var(--accent); color: #000; }
+.btn-gold { background: var(--gold); color: #000; }
+.btn-diamond { background: var(--diamond); color: #000; }
+
+.btn-plan:hover { filter: brightness(1.1); transform: scale(1.02); }
 
 @media (max-width: 968px) {
     .hero { flex-direction: column; text-align: center; padding-top: 150px; }
