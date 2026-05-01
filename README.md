@@ -14,16 +14,6 @@
   <img src="Screenshots4.png" alt="GHOSTWing UI 4" width="400">
 </p>
 
----
-
-## 📜 Changelog (v1.0.3)
-### **Universal Security & Marketplace Update**
-- **Universal Security Architecture**: Implemented a dynamic tab-locking system. All tabs (Settings, Account, Recoil, etc.) are now automatically secured via SQL-driven "Teaser" overlays.
-- **Dynamic VIP Marketplace**: Introduced a fully data-driven VIP Cart. Prices, features, and descriptions are now fetched live from Supabase SQL.
-- **Lifetime Access Support**: Added logic for "Lifetime Access" licenses. If a user's expiry date is set to `NULL` in the database, they gain permanent elite status.
-- **Improved UI Scaling**: Refined the marketplace card designs with better spacing, readable descriptions, and dynamic "Current Plan" button states.
-- **Zero-Warning Build**: Refactored the core entitlement engine to remove all C# nullable warnings for a clean production compile.
-- **Bug Fixes**: Resolved navigation index errors and XAML nesting issues in the main dashboard.
 
 **GHOSTWing** is a high-precision, industrial-grade anti-recoil utility for Windows. Designed for power users and enthusiasts, it provides low-latency, sub-pixel movement control to neutralize weapon recoil in any environment. Built with a focus on stealth and performance, GHOSTWing is the ultimate companion for precision input management.
 
