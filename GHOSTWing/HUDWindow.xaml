@@ -1,0 +1,34 @@
+<Window x:Class="GHOSTWing.HUDWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GHOSTWing HUD" Height="60" Width="300" 
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" IsHitTestVisible="False">
+    <Window.Resources>
+        <Storyboard x:Key="ShowHUDAnim">
+            <DoubleAnimation Storyboard.TargetName="HUDBorder" Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.2"/>
+            <DoubleAnimation Storyboard.TargetName="HUDTransform" Storyboard.TargetProperty="Y" From="10" To="0" Duration="0:0:0.2">
+                <DoubleAnimation.EasingFunction>
+                    <CircleEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+        <Storyboard x:Key="HideHUDAnim">
+            <DoubleAnimation Storyboard.TargetName="HUDBorder" Storyboard.TargetProperty="Opacity" To="0" Duration="0:0:0.3"/>
+            <DoubleAnimation Storyboard.TargetName="HUDTransform" Storyboard.TargetProperty="Y" To="-10" Duration="0:0:0.3"/>
+        </Storyboard>
+    </Window.Resources>
+
+    <Grid>
+        <Border x:Name="HUDBorder" Background="#B3000000" CornerRadius="15" BorderBrush="#D32F2F" BorderThickness="1" Padding="15,5" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="HUDTransform" Y="10"/>
+            </Border.RenderTransform>
+            <TextBlock x:Name="txtHUD" Text="PRESET: M4A1" Foreground="White" FontSize="14" FontWeight="Bold" TextAlignment="Center">
+                <TextBlock.Effect>
+                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
+                </TextBlock.Effect>
+            </TextBlock>
+        </Border>
+    </Grid>
+</Window>

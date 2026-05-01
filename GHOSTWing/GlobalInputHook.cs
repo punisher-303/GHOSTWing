@@ -75,6 +75,23 @@ namespace GHOSTWing
         public static bool IsLeftButtonPressed { get; private set; }
         public static bool IsRightButtonPressed { get; private set; }
 
+        // Physical mouse delta tracking (raw movement from sensor)
+        private static int _accumulatedPhysicalX = 0;
+        private static int _accumulatedPhysicalY = 0;
+        private static readonly object _deltaLock = new object();
+
+        public static (int X, int Y) GetAndResetPhysicalDeltas()
+        {
+            lock (_deltaLock)
+            {
+                int x = _accumulatedPhysicalX;
+                int y = _accumulatedPhysicalY;
+                _accumulatedPhysicalX = 0;
+                _accumulatedPhysicalY = 0;
+                return (x, y);
+            }
+        }
+
         // Modifier state tracking
         private static bool isCtrlPressed = false;
         private static bool isShiftPressed = false;
@@ -105,14 +122,11 @@ namespace GHOSTWing
         private static IntPtr SetHook(int hookId, LowLevelHookProc proc)
         {
             using (Process curProcess = Process.GetCurrentProcess())
+            using (ProcessModule curModule = curProcess.MainModule!)
             {
-                ProcessModule? curModule = curProcess.MainModule;
-                if (curModule?.ModuleName != null)
-                {
-                    return SetWindowsHookEx(hookId, proc, GetModuleHandle(curModule.ModuleName), 0);
-                }
+                IntPtr hMod = GetModuleHandle(curModule.ModuleName!);
+                return SetWindowsHookEx(hookId, proc, hMod, 0);
             }
-            return IntPtr.Zero;
         }
 
         private static IntPtr KeyboardHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
@@ -157,6 +171,13 @@ namespace GHOSTWing
                 else if (msg == WM_RBUTTONDOWN) IsRightButtonPressed = true;
                 else if (msg == WM_RBUTTONUP) IsRightButtonPressed = false;
 
+                // Track physical movement deltas
+                if (msg == 0x0200) // WM_MOUSEMOVE
+                {
+                    var mouseHookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+                    UpdatePhysicalDelta(mouseHookStruct.pt.x, mouseHookStruct.pt.y);
+                }
+                
                 if (msg == WM_MBUTTONDOWN || msg == WM_XBUTTONDOWN)
                 {
                     string buttonName = "";
@@ -177,6 +198,23 @@ namespace GHOSTWing
                 }
             }
             return CallNextHookEx(_mouseHookID, nCode, wParam, lParam);
+        }
+
+        private static int _lastHookX = -1;
+        private static int _lastHookY = -1;
+
+        private static void UpdatePhysicalDelta(int x, int y)
+        {
+            if (_lastHookX != -1)
+            {
+                lock (_deltaLock)
+                {
+                    _accumulatedPhysicalX += (x - _lastHookX);
+                    _accumulatedPhysicalY += (y - _lastHookY);
+                }
+            }
+            _lastHookX = x;
+            _lastHookY = y;
         }
 
         private static string BuildShortcutString(string mainKey)

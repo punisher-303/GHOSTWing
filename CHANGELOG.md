@@ -3,8 +3,24 @@
 All notable changes to the **GHOSTWing** project will be documented in this file.
 
 ---
- 
- ## [1.0.2] - 2026-04-29 (The UX & Precision Update)
+
+## [1.0.3] - 2026-05-01 (Universal Security & Marketplace Update)
+
+### 🚀 Added
+
+- **Universal Security Architecture**: Implemented a dynamic tab-locking system. All tabs (Settings, Account, Recoil, etc.) are now automatically secured via SQL-driven "Teaser" overlays.
+- **Dynamic VIP Marketplace**: Introduced a fully data-driven VIP Cart. Prices, features, and descriptions are now fetched live from Supabase SQL.
+- **Lifetime Access Support**: Added logic for "Lifetime Access" licenses. If a user's expiry date is set to `NULL` in the database, they gain permanent elite status and the UI displays "LIFETIME ACCESS".
+- **Dynamic Plan Tracking**: Integrated `plan_id` (1=FREE, 2=GOLD, 3=DIAMOND) tracking. The Marketplace now automatically highlights the user's active plan and disables the corresponding checkout button.
+- **Improved UI Scaling**: Refined the marketplace card designs with better spacing, readable descriptions, and updated text contrast for high-resolution displays.
+
+### 🛠️ Fixed
+
+- **Navigation Logic**: Resolved an issue where clicking "Upgrade" on a locked tab would incorrectly redirect to the Account page instead of the VIP Cart.
+- **Zero-Warning Build**: Refactored the core entitlement engine to remove all C# nullable reference warnings, ensuring a clean production compile.
+- **XAML Stability**: Fixed a critical nesting error in the main dashboard that prevented successful compilation during the UI refactor.
+- **Accurate Branding**: Standardized sidebar badges and labels across all tabs for a more unified premium look.
+
  
  ### 🚀 Added
  

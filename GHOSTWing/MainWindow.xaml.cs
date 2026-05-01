@@ -23,7 +23,7 @@ namespace GHOSTWing
         const uint INPUT_MOUSE = 0;
         const uint MOUSEEVENTF_MOVE = 0x0001;
         const int VK_LBUTTON = 0x01;
-        const string AppVersion = "1.0.2";
+        const string AppVersion = "1.0.3";
         const string UpdateJsonUrl = "https://raw.githubusercontent.com/punisher-303/GHOSTWing/refs/heads/main/version.json";
         private string downloadUrl = "https://github.com/punisher-303/GHOSTWing/releases"; // Default fallback
 
@@ -57,10 +57,20 @@ namespace GHOSTWing
         private CrosshairWindow? crosshairWindow;
 
         // ADS Hide feature
+        private bool _isInitializing = true;
         private bool _adsHideEnabled = false;
         private Thread? _adsWatchThread;
         private bool _adsWatchRunning = false;
         private const int VK_RBUTTON = 0x02;
+
+        // Jitter State
+        private bool _jitterDirection = false;
+        private int _firingMs = 0;
+        private double _internalAiStrength = 3.0; // Dynamic Auto-Leveler
+
+        // Entitlements
+        private EntitlementService entitlementService = new EntitlementService();
+        private UserEntitlements? currentEntitlements;
 
 
 
@@ -76,6 +86,27 @@ namespace GHOSTWing
         [DllImport("winmm.dll", EntryPoint = "timeBeginPeriod")]
         private static extern uint timeBeginPeriod(uint uPeriod);
 
+        [DllImport("user32.dll")]
+        static extern bool GetCursorInfo(out CURSORINFO pci);
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct CURSORINFO
+        {
+            public Int32 cbSize;
+            public Int32 flags;
+            public IntPtr hCursor;
+            public POINT ptScreenPos;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct POINT
+        {
+            public Int32 x;
+            public Int32 y;
+        }
+
+        const Int32 CURSOR_SHOWING = 0x00000001;
+
         [DllImport("winmm.dll", EntryPoint = "timeEndPeriod")]
         private static extern uint timeEndPeriod(uint uPeriod);
 
@@ -84,10 +115,30 @@ namespace GHOSTWing
 
         public MainWindow()
         {
-            InitializeComponent();
+            string debugPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GHOSTWing", "startup_debug.txt");
+            try { 
+                string? dir = System.IO.Path.GetDirectoryName(debugPath);
+                if (dir != null)
+                {
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                }
+                File.WriteAllText(debugPath, "CONSTRUCTOR BEGUN at " + DateTime.Now.ToString() + "\n"); 
+            } catch { }
 
-            presetManager.Load();
-            RefreshPresetCombo();
+            try
+            {
+                InitializeComponent();
+                try { File.AppendAllText(debugPath, "InitializeComponent OK\n"); } catch { }
+
+                presetManager.Load();
+                RefreshPresetCombo();
+                try { File.AppendAllText(debugPath, "Constructor Data Loaded\n"); } catch { }
+            }
+            catch (Exception ex)
+            {
+                try { File.AppendAllText(debugPath, "CONSTRUCTOR CRASH: " + ex.ToString() + "\n"); } catch { }
+                System.Windows.MessageBox.Show("Initialize Error: " + ex.Message + "\n\nTry deleting your AppData\\Roaming\\GHOSTWing folder.");
+            }
 
             sliderVertical.Value = 0;
             sliderHorizontal.Value = 0;
@@ -133,8 +184,12 @@ namespace GHOSTWing
             var exitItem = new System.Windows.Forms.ToolStripMenuItem("Exit");
             exitItem.Click += (s, e) =>
             {
-                if (_notifyIcon != null) _notifyIcon.Visible = false;
-                System.Windows.Application.Current.Shutdown();
+                if (_notifyIcon != null)
+                {
+                    _notifyIcon.Visible = false;
+                    _notifyIcon.Dispose();
+                }
+                Environment.Exit(0);
             };
             
             menuStrip.Items.Add(openItem);
@@ -151,60 +206,165 @@ namespace GHOSTWing
 
         private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            InitializeTrayIcon();
-            settingsManager.Load();
-            txtToggleShortcut.Text = settingsManager.Settings.ToggleShortcut;
+            string debugPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GHOSTWing", "startup_debug.txt");
+            try { File.WriteAllText(debugPath, "STARTUP BEGUN at " + DateTime.Now.ToString() + "\n"); } catch { }
 
-            RefreshPresetHotkeys();
-
-            GlobalInputHook.OnShortcutPressed += GlobalInputHook_OnShortcutPressed;
-            GlobalInputHook.Start();
-
-            txtAppVersion.Text = AppVersion;
-            txtBadgeVersion.Text = "v" + AppVersion;
-            
-            // Initialize Unique Device ID
-            txtUUID.Text = HardwareIdManager.GetDeviceId();
-            
-            // Initialize Streamer Mode (Combined Stealth)
-            btnStreamerMode.IsChecked = settingsManager.Settings.IsStreamerMode;
-            UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
-            this.ShowInTaskbar = !settingsManager.Settings.IsStreamerMode;
-
-            // Initialize System Info
-            txtOSVersion.Text = GetFriendlyOSName();
-            txtRuntimeVersion.Text = RuntimeInformation.FrameworkDescription;
-
-            // Set high process priority for consistent performance
-            try { Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High; } catch { }
-
-            // Initialize cached values from sliders
-            _cachedVertical = sliderVertical.Value;
-            _cachedHorizontal = sliderHorizontal.Value;
-            _cachedDelay = (int)sliderDelay.Value;
-
-            _ = CheckForUpdates(); // Start silent background check on startup
-
-            // Initialize Professional Settings UI
-            chkRunOnStartup.IsChecked = settingsManager.Settings.RunOnStartup;
-            chkMinimizeToTray.IsChecked = settingsManager.Settings.MinimizeToTray;
-            chkStartMinimized.IsChecked = settingsManager.Settings.StartMinimized;
-            sliderOpacity.Value = settingsManager.Settings.AppOpacity;
-            this.Opacity = settingsManager.Settings.AppOpacity;
-            txtSettingsVersion.Text = AppVersion;
-
-            // Apply Performance settings
-            UpdateProcessPriority();
-            
-            // Handle Start Minimized
-            if (settingsManager.Settings.StartMinimized)
+            try
             {
-                this.WindowState = WindowState.Minimized;
-                if (settingsManager.Settings.MinimizeToTray) this.Hide();
+                InitializeTrayIcon();
+                try { File.AppendAllText(debugPath, "Tray OK\n"); } catch { }
+                
+                // 1. Load Data
+                settingsManager.Load();
+                presetManager.Load();
+                try { File.AppendAllText(debugPath, "Data Loaded\n"); } catch { }
+
+                // Initial UI Setup
+                txtAppVersion.Text = AppVersion;
+                txtBadgeVersion.Text = "v" + AppVersion;
+                txtUUID.Text = HardwareIdManager.GetDeviceId();
+                txtOSVersion.Text = GetFriendlyOSName();
+                txtRuntimeVersion.Text = RuntimeInformation.FrameworkDescription;
+                txtToggleShortcut.Text = string.IsNullOrEmpty(settingsManager.Settings.ToggleShortcut) ? "None" : settingsManager.Settings.ToggleShortcut;
+                
+                // Sync Toggle Buttons in Settings
+                chkRunOnStartup.IsChecked = settingsManager.Settings.RunOnStartup;
+                chkMinimizeToTray.IsChecked = settingsManager.Settings.MinimizeToTray;
+                chkStartMinimized.IsChecked = settingsManager.Settings.StartMinimized;
+                chkAutoPause.IsChecked = settingsManager.Settings.AutoPauseInMenus;
+                chkAiRecoil.IsChecked = settingsManager.Settings.AdaptiveRecoilEnabled;
+                sliderOpacity.Value = settingsManager.Settings.AppOpacity;
+                this.Opacity = settingsManager.Settings.AppOpacity;
+                try { File.AppendAllText(debugPath, "UI Setup OK\n"); } catch { }
+                
+                btnStreamerMode.IsChecked = settingsManager.Settings.IsStreamerMode;
+                UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
+
+                // Restore Activation Mode
+                if (settingsManager.Settings.ActivationMode == "LeftOnly")
+                {
+                    rbModeLeftOnly.IsChecked = true;
+                    currentActivationMode = ActivationMode.LeftOnly;
+                }
+                else
+                {
+                    rbModeRightLeft.IsChecked = true;
+                    currentActivationMode = ActivationMode.RightAndLeft;
+                }
+
+                // Restore Calibration settings
+                txtGameVertSens.Text = settingsManager.Settings.GameVerticalSens.ToString("0.0#");
+                txtGameADSSens.Text = settingsManager.Settings.GameADSSens.ToString("0");
+                txtMouseDpi.Text = settingsManager.Settings.MouseDpi.ToString();
+                UpdateJitterStatusUI(false);
+
+                // 4. Restore Last Selected Preset
+                RefreshPresetHotkeys();
+                if (!string.IsNullOrEmpty(settingsManager.Settings.LastSelectedPreset))
+                {
+                    foreach (var item in comboPresets.Items)
+                    {
+                        if (item.ToString() == settingsManager.Settings.LastSelectedPreset)
+                        {
+                            comboPresets.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
+                else if (comboPresets.Items.Count > 0)
+                {
+                    // If no last selected, auto-load the first one instead of empty
+                    comboPresets.SelectedIndex = 0;
+                }
+                try { File.AppendAllText(debugPath, "Presets OK\n"); } catch { }
+
+                // 5. Restore Performance & Tray Settings
+                UpdateProcessPriority();
+                if (settingsManager.Settings.StartMinimized)
+                {
+                    this.WindowState = WindowState.Minimized;
+                    if (settingsManager.Settings.MinimizeToTray) this.Hide();
+                }
+
+                // 6. Restore Crosshair & Intelligent Features
+                RestoreCrosshairSettings();
+                try { File.AppendAllText(debugPath, "Crosshair OK\n"); } catch { }
+
+                Dispatcher.BeginInvoke(new Action(() => _isInitializing = false), System.Windows.Threading.DispatcherPriority.ContextIdle);
+
+                // 7. Final Startups
+                GlobalInputHook.OnShortcutPressed += GlobalInputHook_OnShortcutPressed;
+                GlobalInputHook.Start();
+                try { File.AppendAllText(debugPath, "Hooks OK\n"); } catch { }
+
+                _cachedVertical = (float)sliderVertical.Value;
+                _cachedHorizontal = (float)sliderHorizontal.Value;
+                _cachedDelay = (int)sliderDelay.Value;
+
+                _ = CheckForUpdates();
+
+                // 8. Membership & Entitlements
+                RefreshEntitlementsAsync();
+                
+                if (MainTabControl != null) MainTabControl.SelectedIndex = 0;
+                
+                try { File.AppendAllText(debugPath, "FINISHED\n"); } catch { }
+            }
+            catch (Exception ex)
+            {
+                try { File.AppendAllText(debugPath, "CRASH: " + ex.ToString() + "\n"); } catch { }
+                System.Windows.MessageBox.Show("Startup Error: " + ex.Message);
+            }
+        }
+
+        private void RestoreCrosshairSettings()
+        {
+            var s = settingsManager.Settings;
+            
+            // Restore UI state
+            if (s.CrosshairEnabled)
+            {
+                btnCrosshairEnable.IsChecked = true;
+                crosshairWindow = new CrosshairWindow();
+                crosshairWindow.Show();
+                
+                if (s.IsStreamerMode) UpdateStreamerMode(true);
             }
 
-            // Ensure first page is loaded correctly on startup
-            if (MainTabControl != null) MainTabControl.SelectedIndex = 0;
+            if (comboCrosshairShape != null) comboCrosshairShape.SelectedIndex = s.CrosshairShapeIndex;
+            if (comboCrosshairColor != null) comboCrosshairColor.SelectedIndex = s.CrosshairColorIndex;
+            if (sliderCrosshairSize != null) sliderCrosshairSize.Value = s.CrosshairSize;
+            if (sliderCrosshairThickness != null) sliderCrosshairThickness.Value = s.CrosshairThickness;
+            if (sliderCrosshairGap != null) sliderCrosshairGap.Value = s.CrosshairGap;
+            if (sliderCrosshairOpacity != null) sliderCrosshairOpacity.Value = s.CrosshairOpacity;
+            if (chkCrosshairDot != null) chkCrosshairDot.IsChecked = s.CrosshairDot;
+            if (chkCrosshairOutline != null) chkCrosshairOutline.IsChecked = s.CrosshairOutline;
+            if (chkHideOnADS != null) chkHideOnADS.IsChecked = s.HideOnADS;
+            
+            _adsHideEnabled = s.HideOnADS;
+
+            UpdateCrosshairOverlay();
+            
+            if (s.CrosshairEnabled && s.HideOnADS) StartAdsWatch();
+        }
+
+        private void SaveCrosshairSettings()
+        {
+            if (_isInitializing || settingsManager == null || comboCrosshairShape == null) return;
+
+            var s = settingsManager.Settings;
+            s.CrosshairEnabled = btnCrosshairEnable.IsChecked == true;
+            s.CrosshairShapeIndex = comboCrosshairShape.SelectedIndex;
+            s.CrosshairColorIndex = comboCrosshairColor.SelectedIndex;
+            s.CrosshairSize = sliderCrosshairSize.Value;
+            s.CrosshairThickness = sliderCrosshairThickness.Value;
+            s.CrosshairGap = sliderCrosshairGap.Value;
+            s.CrosshairOpacity = sliderCrosshairOpacity.Value;
+            s.CrosshairDot = chkCrosshairDot.IsChecked == true;
+            s.CrosshairOutline = chkCrosshairOutline.IsChecked == true;
+            s.HideOnADS = chkHideOnADS.IsChecked == true;
+
+            settingsManager.Save();
         }
 
         private void btnDownloadNow_Click(object sender, RoutedEventArgs e)
@@ -419,19 +579,27 @@ namespace GHOSTWing
                 return;
             }
 
+            // --- FULL SHUTDOWN SEQUENCE ---
+            recoilActive = false;
+            _adsWatchRunning = false;
+            
             GlobalInputHook.Stop();
             GlobalInputHook.OnShortcutPressed -= GlobalInputHook_OnShortcutPressed;
-            recoilActive = false;
+            
             if (crosshairWindow != null)
             {
                 crosshairWindow.Close();
                 crosshairWindow = null;
             }
+
             if (_notifyIcon != null)
             {
                 _notifyIcon.Visible = false;
                 _notifyIcon.Dispose();
             }
+
+            // Force process termination to clean up background threads
+            Environment.Exit(0);
         }
 
         private void RefreshPresetHotkeys()
@@ -461,10 +629,12 @@ namespace GHOSTWing
                 // Check for Toggle shortcut
                 if (!string.IsNullOrEmpty(settingsManager.Settings.ToggleShortcut) && shortcut == settingsManager.Settings.ToggleShortcut)
                 {
-                    if (recoilActive) StopRecoil();
-                    else StartRecoil();
+                    string keyInfo = !string.IsNullOrEmpty(shortcut) ? $" [{shortcut}]" : "";
+                    if (recoilActive) { StopRecoil(); ShowHUD($"ENGINE: OFF{keyInfo}"); }
+                    else { StartRecoil(); ShowHUD($"ENGINE: ON{keyInfo}"); }
                     return;
                 }
+
 
                 // Check for Preset shortcut
                 if (hotkeyPresetMap.TryGetValue(shortcut, out string? foundName) && foundName != null)
@@ -477,6 +647,7 @@ namespace GHOSTWing
                         sliderDelay.Value = preset.Delay;
                         txtPresetName.Text = preset.Name;
                         txtShortcutKey.Text = preset.ShortcutKey;
+                        ShowHUD($"PRESET: {preset.Name}");
                     }
                 }
             });
@@ -513,14 +684,21 @@ namespace GHOSTWing
         {
             if (comboPresets.SelectedItem != null)
             {
-                var preset = presetManager.Presets.Find(p => p.Name == comboPresets.SelectedItem.ToString());
+                string? selectedName = comboPresets.SelectedItem.ToString();
+                var preset = presetManager.Presets.Find(p => p.Name == selectedName);
                 if (preset != null)
                 {
                     sliderVertical.Value = preset.Vertical;
                     sliderHorizontal.Value = preset.Horizontal;
                     sliderDelay.Value = preset.Delay;
                     txtPresetName.Text = preset.Name;
-                    txtShortcutKey.Text = preset.ShortcutKey;
+                    txtShortcutKey.Text = preset.ShortcutKey ?? "";
+                    
+                    if (!_isInitializing && settingsManager != null)
+                    {
+                        settingsManager.Settings.LastSelectedPreset = selectedName ?? "";
+                        settingsManager.Save();
+                    }
                 }
             }
         }
@@ -662,6 +840,8 @@ namespace GHOSTWing
                 btnRecoilStatus.IsChecked = true;
                 txtEngineStatus.Text = "RUNNING";
                 txtEngineStatus.Foreground = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1DB954"));
+                UpdateJitterStatusUI(true);
+                ShowHUD("RECOIL ENGINE: ON");
             }
         }
 
@@ -671,16 +851,40 @@ namespace GHOSTWing
             btnRecoilStatus.IsChecked = false;
             txtEngineStatus.Text = "STOPPED";
             txtEngineStatus.Foreground = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#D32F2F"));
+            UpdateJitterStatusUI(false);
+            ShowHUD("RECOIL ENGINE: OFF");
+        }
+
+        private void UpdateJitterStatusUI(bool active)
+        {
+            if (borderJitterStatus == null) return;
+            var colorStr = active ? "#10B981" : "#F43F5E";
+            var brush = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorStr));
+            
+            borderJitterStatus.BorderBrush = brush;
+            txtJitterTitle.Foreground = brush;
+            txtJitterStatus.Foreground = brush;
+            txtJitterStatus.Text = active ? "ACTIVE" : "OFFLINE";
         }
 
         private void rbModeRightLeft_Checked(object sender, RoutedEventArgs e)
         {
             currentActivationMode = ActivationMode.RightAndLeft;
+            if (!_isInitializing && settingsManager != null)
+            {
+                settingsManager.Settings.ActivationMode = "RightAndLeft";
+                settingsManager.Save();
+            }
         }
 
         private void rbModeLeftOnly_Checked(object sender, RoutedEventArgs e)
         {
             currentActivationMode = ActivationMode.LeftOnly;
+            if (!_isInitializing && settingsManager != null)
+            {
+                settingsManager.Settings.ActivationMode = "LeftOnly";
+                settingsManager.Save();
+            }
         }
 
         private void NavRecoil_Checked(object sender, RoutedEventArgs e)
@@ -697,9 +901,268 @@ namespace GHOSTWing
             }
         }
 
-        private void NavSettings_Checked(object sender, RoutedEventArgs e)
+        private void NavIntelligence_Checked(object sender, RoutedEventArgs e)
         {
             if (MainTabControl != null) MainTabControl.SelectedIndex = 2;
+        }
+
+        private void NavAccount_Checked(object sender, RoutedEventArgs e)
+        {
+            if (MainTabControl != null) MainTabControl.SelectedIndex = 4;
+        }
+
+        private void NavSettings_Checked(object sender, RoutedEventArgs e)
+        {
+            if (MainTabControl != null) MainTabControl.SelectedIndex = 3;
+        }
+
+        private void NavCart_Checked(object sender, RoutedEventArgs e)
+        {
+            if (MainTabControl != null)
+            {
+                MainTabControl.SelectedIndex = 5;
+                _ = LoadPlansAsync(); // Fire and forget
+            }
+        }
+
+        private async void RefreshEntitlementsAsync()
+        {
+            string uuid = HardwareIdManager.GetDeviceId();
+            currentEntitlements = await entitlementService.FetchEntitlements(uuid);
+            
+            // Update UI on UI Thread
+            Dispatcher.Invoke(() => {
+                UpdateAccountUI();
+                ApplySecurityLocks();
+            });
+        }
+
+        private List<AppPlan> _availablePlans = new List<AppPlan>();
+
+        private async Task LoadPlansAsync()
+        {
+            var plans = await entitlementService.FetchPlans();
+            if (plans == null || plans.Count == 0) return;
+            
+            _availablePlans = plans;
+            Dispatcher.Invoke(() => UpdatePlanCards(plans));
+        }
+
+        private void UpdatePlanCards(List<AppPlan> plans)
+        {
+            int currentPlanId = currentEntitlements?.PlanId ?? 1;
+
+            foreach (var plan in plans)
+            {
+                StackPanel? panel = plan.Id switch { 1 => panelFreeFeatures, 2 => panelGoldFeatures, 3 => panelDiamondFeatures, _ => null };
+                System.Windows.Controls.Button? buyBtn = plan.Id switch { 1 => btnFreeBuy, 2 => btnGoldBuy, 3 => btnDiamondBuy, _ => null };
+                
+                if (panel == null) continue;
+
+                panel.Children.Clear();
+                foreach (var feat in plan.Features)
+                {
+                    var sp = new StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 4) };
+                    var icon = new TextBlock 
+                    { 
+                        Text = feat.Value ? "✓" : "✘", 
+                        Foreground = new SolidColorBrush(feat.Value ? Colors.Green : Colors.Red),
+                        FontWeight = FontWeights.Bold,
+                        Width = 20
+                    };
+                    var text = new TextBlock 
+                    { 
+                        Text = feat.Name, 
+                        Foreground = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(feat.Value ? "#FAFAFA" : "#555555")),
+                        FontSize = 11
+                    };
+                    sp.Children.Add(icon);
+                    sp.Children.Add(text);
+                    panel.Children.Add(sp);
+                }
+
+                // Update Prices and Descriptions
+                if (plan.Id == 1) { txtFreePrice.Text = plan.Price; txtFreeDesc.Text = plan.Description; }
+                if (plan.Id == 2) { txtGoldPrice.Text = plan.Price; txtGoldDesc.Text = plan.Description; }
+                if (plan.Id == 3) { txtDiamondPrice.Text = plan.Price; txtDiamondDesc.Text = plan.Description; }
+
+                // Update Button State based on PlanId (1=FREE, 2=GOLD, 3=DIAMOND)
+                if (buyBtn != null)
+                {
+                    bool isCurrent = plan.Id == currentPlanId;
+                    buyBtn.Content = isCurrent ? "CURRENT PLAN" : "UPGRADE NOW";
+                    buyBtn.IsEnabled = !isCurrent;
+                    buyBtn.Opacity = isCurrent ? 0.5 : 1.0;
+                }
+            }
+        }
+
+        private void btnPlan_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn)
+            {
+                int id = btn.Name switch { "btnFreeBuy" => 1, "btnGoldBuy" => 2, "btnDiamondBuy" => 3, _ => 0 };
+                var plan = _availablePlans.FirstOrDefault(p => p.Id == id);
+                if (plan != null && !string.IsNullOrEmpty(plan.CheckoutUrl))
+                {
+                    try { Process.Start(new ProcessStartInfo(plan.CheckoutUrl) { UseShellExecute = true }); } catch { }
+                }
+            }
+        }
+
+        private void UpdateAccountUI()
+        {
+            if (currentEntitlements == null) return;
+
+            txtAccUserName.Text = currentEntitlements.UserName.ToUpper();
+            txtAccUUID.Text = "UUID: " + currentEntitlements.Uuid;
+            
+            if (currentEntitlements.IsVip)
+            {
+                txtAccStatusBadge.Text = "VIP MEMBER";
+                txtAccStatusText.Text = "ACTIVE";
+                txtAccPurchaseDate.Text = currentEntitlements.PurchaseDate.ToString("dd / MM / yyyy");
+
+                if (currentEntitlements.ExpiryDate.HasValue)
+                {
+                    txtAccExpiryDate.Text = currentEntitlements.ExpiryDate.Value.ToString("dd / MM / yyyy");
+                    var remaining = currentEntitlements.ExpiryDate.Value - DateTime.Now;
+                    if (remaining.TotalSeconds > 0)
+                    {
+                        int years = remaining.Days / 365;
+                        int months = (remaining.Days % 365) / 30;
+                        int days = (remaining.Days % 365) % 30;
+                        int hours = remaining.Hours;
+                        txtAccDaysLeft.Text = $"{years}Y {months}M {days}D {hours}H";
+                        txtAccDaysLeft.FontSize = 14;
+                    }
+                    else
+                    {
+                        txtAccDaysLeft.Text = "EXPIRED";
+                        txtAccDaysLeft.FontSize = 16;
+                    }
+                }
+                else
+                {
+                    txtAccExpiryDate.Text = "LIFETIME ACCESS";
+                    txtAccDaysLeft.Text = "FOREVER";
+                    txtAccDaysLeft.FontSize = 18;
+                }
+            }
+            else
+            {
+                txtAccStatusBadge.Text = "FREE USER";
+                txtAccStatusText.Text = "FREE";
+                txtAccPurchaseDate.Text = currentEntitlements.PurchaseDate.ToString("dd / MM / yyyy");
+                txtAccExpiryDate.Text = "FREE USER";
+                txtAccDaysLeft.Text = "FREE USER";
+                txtAccDaysLeft.FontSize = 14;
+            }
+
+            // Days Active
+            var completed = (DateTime.Now - currentEntitlements.PurchaseDate).TotalDays;
+            txtAccDaysActive.Text = Math.Max(1, (int)Math.Ceiling(completed)) + " Days";
+
+            // Colors
+            var accent = currentEntitlements.IsVip ? "#10B981" : "#71717A"; // Green for VIP, Zinc-Grey for Free
+            var brush = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(accent));
+            txtAccStatusBadge.Foreground = brush;
+            txtAccStatusText.Foreground = brush;
+            borderProgressCircle.BorderBrush = brush;
+            txtAccDaysLeft.Foreground = brush;
+        }
+
+        private void ApplySecurityLocks()
+        {
+            if (currentEntitlements == null) return;
+
+            // 1. Universal Tab Security (Loops through all keys in SQL)
+            foreach (var tab in currentEntitlements.Tabs)
+            {
+                if (tab.Key == "VipCart") continue; // Always allow purchase tab
+
+                // Find elements by convention: NavKey, overlayKey, badgeSideKey
+                Border? overlay = this.FindName("overlay" + tab.Key) as Border;
+                Border? badge = this.FindName("badgeSide" + tab.Key) as Border;
+
+                UpdateTabOverlay(tab.Key, overlay, badge);
+            }
+
+            // 2. Feature Locking (Keep these specific as they link to different control types)
+            UpdateFeatureLock("JitterEngine", chkAiRecoil, badgeVipJitter);
+            UpdateFeatureLock("AutoPause", chkAutoPause, null);
+            UpdateFeatureLock("EngineStatus", btnRecoilStatus, badgeVipEngine);
+            UpdateFeatureLock("StreamerMode", btnStreamerMode, badgeVipStreamer);
+            UpdateFeatureLock("CrosshairActive", btnCrosshairEnable, badgeVipCrossActive);
+            UpdateFeatureLock("StartWithWindows", chkRunOnStartup, badgeVipStartup);
+            UpdateFeatureLock("MinimizeToTray", chkMinimizeToTray, null);
+            UpdateFeatureLock("StartMinimized", chkStartMinimized, null);
+        }
+
+        private void UpdateTabOverlay(string key, Border? overlay, Border? badge)
+        {
+            if (currentEntitlements != null && currentEntitlements.Tabs.TryGetValue(key, out bool allowed))
+            {
+                if (overlay != null) overlay.Visibility = allowed ? Visibility.Collapsed : Visibility.Visible;
+                bool isMaint = currentEntitlements.Maintenance.ContainsKey(key) && currentEntitlements.Maintenance[key];
+                
+                if (badge != null)
+                {
+                    badge.Visibility = allowed ? Visibility.Collapsed : Visibility.Visible;
+                    if (!allowed)
+                    {
+                        var grid = badge.Parent as Grid;
+                        if (grid != null)
+                        {
+                            var textBlock = grid.Children.OfType<Border>().FirstOrDefault()?.Child as TextBlock;
+                            if (textBlock != null) textBlock.Text = isMaint ? "MAINT" : "VIP";
+                        }
+                    }
+                }
+            }
+        }
+
+        private void btnGoToCart_Click(object sender, RoutedEventArgs e)
+        {
+            // Switch to VIP CART tab (Index 5)
+            NavVipCart.IsChecked = true;
+            MainTabControl.SelectedIndex = 5;
+        }
+
+        private void UpdateTabLock(string key, System.Windows.Controls.RadioButton nav, Border? badge)
+        {
+            // No longer used for disabling, but kept for legacy or badge logic if needed
+            if (currentEntitlements != null && currentEntitlements.Tabs.TryGetValue(key, out bool allowed))
+            {
+                // nav.IsEnabled = true; // Always allow clicking
+            }
+        }
+
+        private void sliderJitter_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (txtJitterValue != null)
+                txtJitterValue.Text = e.NewValue.ToString("F1");
+        }
+
+        private void UpdateFeatureLock(string key, System.Windows.Controls.Primitives.ToggleButton toggle, Border? badge)
+        {
+            if (currentEntitlements != null && currentEntitlements.Features.TryGetValue(key, out bool allowed))
+            {
+                toggle.IsEnabled = allowed;
+                bool isMaint = currentEntitlements.Maintenance.ContainsKey(key) && currentEntitlements.Maintenance[key];
+
+                if (badge != null)
+                {
+                    badge.Visibility = allowed ? Visibility.Collapsed : Visibility.Visible;
+                    if (!allowed)
+                    {
+                        var textBlock = (TextBlock)badge.Child;
+                        textBlock.Text = isMaint ? "UNDER MAINTENANCE" : "VIP ONLY";
+                    }
+                }
+                
+                if (!allowed) toggle.IsChecked = false;
+            }
         }
 
         private void btnCrosshairEnable_Click(object sender, RoutedEventArgs e)
@@ -713,25 +1176,29 @@ namespace GHOSTWing
                 crosshairWindow.Show();
                 UpdateCrosshairOverlay();
                 
-                // Ensure stealth mode is applied if active
                 if (settingsManager.Settings.IsStreamerMode)
                 {
                     UpdateStreamerMode(true);
                 }
 
-                // Resume ADS watch if enabled
                 if (_adsHideEnabled) StartAdsWatch();
             }
             else
             {
                 StopAdsWatch();
-                crosshairWindow?.Hide();
+                if (crosshairWindow != null)
+                {
+                    crosshairWindow.Close();
+                    crosshairWindow = null;
+                }
             }
+            SaveCrosshairSettings();
         }
 
         private void chkHideOnADS_Click(object sender, RoutedEventArgs e)
         {
             _adsHideEnabled = chkHideOnADS.IsChecked == true;
+            SaveCrosshairSettings();
             if (_adsHideEnabled && btnCrosshairEnable.IsChecked == true)
                 StartAdsWatch();
             else
@@ -776,11 +1243,13 @@ namespace GHOSTWing
         private void CrosshairSetting_Changed(object sender, SelectionChangedEventArgs e)
         {
             UpdateCrosshairOverlay();
+            SaveCrosshairSettings();
         }
 
         private void CrosshairSetting_Changed(object sender, RoutedEventArgs e)
         {
             UpdateCrosshairOverlay();
+            SaveCrosshairSettings();
         }
 
         private void UpdateCrosshairOverlay()
@@ -1035,6 +1504,22 @@ namespace GHOSTWing
             return desc;
         }
 
+        private HUDWindow? _hud;
+
+        private void ShowHUD(string message)
+        {
+            if (!settingsManager.Settings.ShowOnScreenHUD) return;
+
+            if (!System.Windows.Application.Current.Dispatcher.CheckAccess())
+            {
+                System.Windows.Application.Current.Dispatcher.Invoke(() => ShowHUD(message));
+                return;
+            }
+
+            if (_hud == null) _hud = new HUDWindow();
+            _hud.ShowMessage(message);
+        }
+
         private void AutoRecoilLoop()
         {
             // Set 1ms timer resolution for high-precision sleep
@@ -1047,6 +1532,20 @@ namespace GHOSTWing
                 while (recoilActive)
                 {
                     sw.Restart();
+                    int targetDelay = _cachedDelay;
+
+                    // 1. Smart Mouse Detection (Anti-Menu Bug)
+                    // Checks if mouse pointer is visible (Inventory/Menu/Map)
+                    bool isCursorVisible = false;
+                    if (settingsManager.Settings.AutoPauseInMenus)
+                    {
+                        CURSORINFO ci = new CURSORINFO();
+                        ci.cbSize = Marshal.SizeOf(ci);
+                        if (GetCursorInfo(out ci))
+                        {
+                            if (ci.flags == CURSOR_SHOWING) isCursorVisible = true;
+                        }
+                    }
 
                     // Use high-priority hook states instead of polling GetAsyncKeyState
                     bool leftPressed = GlobalInputHook.IsLeftButtonPressed;
@@ -1058,35 +1557,108 @@ namespace GHOSTWing
                     else
                         shouldActivate = leftPressed;
 
-                    if (shouldActivate)
+                    // Only activate if buttons are pressed AND mouse cursor is hidden (in-game)
+                    if (shouldActivate && !isCursorVisible)
                     {
-                        double vertical = _cachedVertical;
-                        double horizontal = _cachedHorizontal;
-
-                        // Accumulate fractional movement
-                        accumulatedX += horizontal;
-                        accumulatedY += vertical;
-
-                        int moveX = (int)accumulatedX;
-                        int moveY = (int)accumulatedY;
-
-                        accumulatedX -= moveX;
-                        accumulatedY -= moveY;
-
-                        // Only send input if there is real movement
-                        if (moveX != 0 || moveY != 0)
+                        if (settingsManager.Settings.AdaptiveRecoilEnabled)
                         {
-                            MoveCursorRelative(moveX, moveY);
+                            // --- UNIVERSAL JITTER ENGINE (GOD MODE) ---
+                            var s = settingsManager.Settings;
+                            
+                            // 1. High-Frequency Vertical Jitter (1000Hz)
+                            double jitterVal = _jitterDirection ? 0.52 : -0.52;
+                            _jitterDirection = !_jitterDirection;
+
+                            // 2. Track Firing Duration
+                            if (shouldActivate) _firingMs += 1;
+                            else _firingMs = 0;
+
+                            var physical = GlobalInputHook.GetAndResetPhysicalDeltas();
+                            double userSpeed = Math.Sqrt(physical.X * physical.X + physical.Y * physical.Y);
+
+                            // 3. Sensitivity-Aware Aim Filter (DPI Normalized)
+                            double transparency = 1.0;
+                            double threshold = 5.0 * (s.MouseDpi / 800.0); // Adjust sensitivity threshold by DPI
+                            if (userSpeed > threshold)
+                            {
+                                transparency = Math.Max(0, 1.0 - (userSpeed - threshold) / (threshold * 2.0));
+                            }
+
+                            // 4. Dynamic 'Auto-Leveling' with Sensitivity Normalization
+                            // Power adjusts based on Vert Multiplier and ADS Sensi
+                            double vertFactor = 1.0 / Math.Max(0.1, s.GameVerticalSens);
+                            double adsFactor = 50.0 / Math.Max(1.0, s.GameADSSens);
+                            double normalization = vertFactor * adsFactor;
+
+                            if (physical.Y < -0.3) _internalAiStrength = Math.Max(1.0, _internalAiStrength - 0.05);
+                            else if (physical.Y > 0.3) _internalAiStrength = Math.Min(5.0, _internalAiStrength + 0.02);
+
+                            // 5. Adaptive Stability Pull (Normalized)
+                            double basePull = ((_internalAiStrength * 0.02) + 0.06) * normalization;
+                            if (_firingMs > 500) basePull += (0.05 * normalization); 
+                            
+                            accumulatedY += (jitterVal + basePull) * transparency;
+
+                            // 6. User Intent Support
+                            if (physical.Y > 0.1)
+                            {
+                                double boost = (physical.Y * 1.3 - physical.Y) * transparency;
+                                accumulatedY += boost; 
+                            }
+                            else if (physical.Y < -0.4)
+                            {
+                                accumulatedY = 0; // Emergency release
+                            }
+
+                            // 7. Horizontal Micro-Stabilization
+                            accumulatedX += (physical.X * 0.05) * transparency;
+
+                            int moveX = (int)accumulatedX;
+                            int moveY = (int)accumulatedY;
+                            accumulatedX -= moveX;
+                            accumulatedY -= moveY;
+
+                            if (moveX != 0 || moveY != 0)
+                            {
+                                MoveCursorRelative(moveX, moveY);
+                            }
+
+                            // Force 1ms precision for the Jitter Engine
+                            targetDelay = 1;
+                        }
+                        else
+                        {
+                            // --- MANUAL RECOIL CONFIGURATION ---
+                            double vertical = _cachedVertical;
+                            double horizontal = _cachedHorizontal;
+
+                            // Accumulate fractional movement
+                            accumulatedX += horizontal;
+                            accumulatedY += vertical;
+
+                            int moveX = (int)accumulatedX;
+                            int moveY = (int)accumulatedY;
+
+                            accumulatedX -= moveX;
+                            accumulatedY -= moveY;
+
+                            // Only send input if there is real movement
+                            if (moveX != 0 || moveY != 0)
+                            {
+                                MoveCursorRelative(moveX, moveY);
+                            }
                         }
                     }
                     else
                     {
+                        // Reset trackers when not firing
+                        GlobalInputHook.GetAndResetPhysicalDeltas(); // Clear stale user input
+                        
                         // When not firing, reset so we don't "dump" stored movement later
                         accumulatedX = 0;
                         accumulatedY = 0;
                     }
 
-                    int targetDelay = _cachedDelay;
                     if (targetDelay < 1) targetDelay = 1;
                     
                     // Hybrid Sleep/Spin: Best of both worlds
@@ -1142,17 +1714,31 @@ namespace GHOSTWing
 
         private void SettingChanged_Click(object sender, RoutedEventArgs e)
         {
-            if (settingsManager == null || chkRunOnStartup == null) return;
+            if (_isInitializing || settingsManager == null || chkRunOnStartup == null) return;
 
             settingsManager.Settings.RunOnStartup = chkRunOnStartup.IsChecked == true;
             settingsManager.Settings.MinimizeToTray = chkMinimizeToTray.IsChecked == true;
             settingsManager.Settings.StartMinimized = chkStartMinimized.IsChecked == true;
+            settingsManager.Settings.AutoPauseInMenus = chkAutoPause.IsChecked == true;
+            settingsManager.Settings.AdaptiveRecoilEnabled = chkAiRecoil.IsChecked == true;
             settingsManager.Settings.PriorityClass = (comboPriority.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "High";
             
             settingsManager.Save();
             UpdateStartupRegistration();
             UpdateProcessPriority();
         }
+
+        private void Calibration_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_isInitializing || settingsManager == null || txtGameVertSens == null) return;
+
+            if (double.TryParse(txtGameVertSens.Text, out double v)) settingsManager.Settings.GameVerticalSens = v;
+            if (double.TryParse(txtGameADSSens.Text, out double a)) settingsManager.Settings.GameADSSens = a;
+            if (int.TryParse(txtMouseDpi.Text, out int d)) settingsManager.Settings.MouseDpi = d;
+
+            settingsManager.Save();
+        }
+
 
         private void sliderOpacity_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
@@ -1236,6 +1822,33 @@ namespace GHOSTWing
         private void btnClose_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void ShowWeaponHUD()
+        {
+            ShowHUD("AI ENGINE: ADAPTING");
+        }
+
+        private void btnRefreshAccount_Click(object sender, RoutedEventArgs e)
+        {
+            RefreshEntitlementsAsync();
+            ShowNotification("Account status synced!", "Success");
+        }
+
+        private void btnExtendSub_Click(object sender, RoutedEventArgs e)
+        {
+            // Open your discord or website
+            Process.Start(new ProcessStartInfo("https://github.com/punisher-303/GHOSTWing") { UseShellExecute = true });
+        }
+
+        private void CopyUUID_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Windows.Clipboard.SetText(HardwareIdManager.GetDeviceId());
+                ShowNotification("UUID Copied!", "Success");
+            }
+            catch { }
         }
     }
 
