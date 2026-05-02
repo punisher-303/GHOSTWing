@@ -23,7 +23,7 @@ namespace GHOSTWing
         const uint INPUT_MOUSE = 0;
         const uint MOUSEEVENTF_MOVE = 0x0001;
         const int VK_LBUTTON = 0x01;
-        const string AppVersion = "1.0.3";
+        const string AppVersion = "1.0.4";
         const string UpdateJsonUrl = "https://raw.githubusercontent.com/punisher-303/GHOSTWing/refs/heads/main/version.json";
         private string downloadUrl = "https://github.com/punisher-303/GHOSTWing/releases"; // Default fallback
 
