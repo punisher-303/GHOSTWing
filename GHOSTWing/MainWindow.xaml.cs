@@ -52,6 +52,7 @@ namespace GHOSTWing
         // Cached slider values to avoid expensive Dispatcher.Invoke in background thread
         private double _cachedVertical = 0;
         private double _cachedHorizontal = 0;
+        private double _cachedJitter = 0.8;
         private int _cachedDelay = 5;
 
         private CrosshairWindow? crosshairWindow;
@@ -149,6 +150,7 @@ namespace GHOSTWing
             sliderVertical.ValueChanged += (s, e) => _cachedVertical = sliderVertical.Value;
             sliderHorizontal.ValueChanged += (s, e) => _cachedHorizontal = sliderHorizontal.Value;
             sliderDelay.ValueChanged += (s, e) => _cachedDelay = (int)sliderDelay.Value;
+            sliderJitter.ValueChanged += (s, e) => _cachedJitter = sliderJitter.Value;
 
             Loaded += MainWindow_Loaded;
             Closing += MainWindow_Closing;
@@ -1566,7 +1568,7 @@ namespace GHOSTWing
                             var s = settingsManager.Settings;
                             
                             // 1. High-Frequency Vertical Jitter (1000Hz)
-                            double jitterVal = _jitterDirection ? 0.52 : -0.52;
+                            double jitterVal = _jitterDirection ? _cachedJitter : -_cachedJitter;
                             _jitterDirection = !_jitterDirection;
 
                             // 2. Track Firing Duration
@@ -1584,30 +1586,36 @@ namespace GHOSTWing
                                 transparency = Math.Max(0, 1.0 - (userSpeed - threshold) / (threshold * 2.0));
                             }
 
-                            // 4. Dynamic 'Auto-Leveling' with Sensitivity Normalization
-                            // Power adjusts based on Vert Multiplier and ADS Sensi
+                            // 4. FULL ADAPTIVE INTELLIGENCE (V2.0 Velocity Tracking)
+                            // Calculates exact pull-down requirement based on user intent vs weapon climb
                             double vertFactor = 1.0 / Math.Max(0.1, s.GameVerticalSens);
                             double adsFactor = 50.0 / Math.Max(1.0, s.GameADSSens);
                             double normalization = vertFactor * adsFactor;
 
-                            if (physical.Y < -0.3) _internalAiStrength = Math.Max(1.0, _internalAiStrength - 0.05);
-                            else if (physical.Y > 0.3) _internalAiStrength = Math.Min(5.0, _internalAiStrength + 0.02);
+                            // Rapid Response: Adjust strength 100x faster if user is fighting recoil
+                            if (physical.Y > 0.5) _internalAiStrength += 0.15 * normalization; // Fast boost
+                            else if (physical.Y > 0.1) _internalAiStrength += 0.02 * normalization; // Steady climb
+                            else if (physical.Y < -0.3) _internalAiStrength = Math.Max(1.0, _internalAiStrength - 0.1); // Quick release
 
-                            // 5. Adaptive Stability Pull (Normalized)
-                            double basePull = ((_internalAiStrength * 0.02) + 0.06) * normalization;
-                            if (_firingMs > 500) basePull += (0.05 * normalization); 
+                            // 5. Dynamic Stability Pull
+                            double basePull = ((_internalAiStrength * 0.022) + 0.05) * normalization;
                             
-                            accumulatedY += (jitterVal + basePull) * transparency;
+                            // 6. Tracking Awareness: Reduce jitter during horizontal swipes for smoother tracking
+                            double horizontalMotion = Math.Abs(physical.X);
+                            double jitterMod = Math.Max(0.2, 1.0 - (horizontalMotion / 5.0));
+                            
+                            accumulatedY += (jitterVal * jitterMod + basePull) * transparency;
 
-                            // 6. User Intent Support
+                            // 7. Micro-Stabilization & Intent Support
                             if (physical.Y > 0.1)
                             {
-                                double boost = (physical.Y * 1.3 - physical.Y) * transparency;
+                                double boost = (physical.Y * 1.35 - physical.Y) * transparency;
                                 accumulatedY += boost; 
                             }
-                            else if (physical.Y < -0.4)
+                            else if (physical.Y < -0.5)
                             {
-                                accumulatedY = 0; // Emergency release
+                                accumulatedY = 0; // Emergency Safety Release
+                                _internalAiStrength = Math.Max(1.0, _internalAiStrength - 0.5);
                             }
 
                             // 7. Horizontal Micro-Stabilization
