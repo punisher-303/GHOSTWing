@@ -42,6 +42,17 @@ namespace GHOSTWing
         public bool CrosshairDot { get; set; } = true;
         public bool CrosshairOutline { get; set; } = true;
         public bool HideOnADS { get; set; } = false;
+        public double JitterStrength { get; set; } = 0.5;
+
+        // Tactical Peek Engine
+        public bool PeekEnabled { get; set; } = false;
+        public bool PeekAutoFire { get; set; } = false;
+        public string PeekActivationKey { get; set; } = ""; // No default key
+        public string GameCrouchKey { get; set; } = "C";
+        public bool PeekModeHold { get; set; } = true; // true = Hold, false = Toggle
+        public int PeekShowMs { get; set; } = 350;
+        public int PeekHideMs { get; set; } = 400;
+        public bool VehicleIntelligenceEnabled { get; set; } = true;
     }
 
     public class SettingsManager

@@ -23,7 +23,7 @@ namespace GHOSTWing
         const uint INPUT_MOUSE = 0;
         const uint MOUSEEVENTF_MOVE = 0x0001;
         const int VK_LBUTTON = 0x01;
-        const string AppVersion = "1.0.4";
+        public const string AppVersion = "1.0.4";
         const string UpdateJsonUrl = "https://raw.githubusercontent.com/punisher-303/GHOSTWing/refs/heads/main/version.json";
         private string downloadUrl = "https://github.com/punisher-303/GHOSTWing/releases"; // Default fallback
 
@@ -72,6 +72,13 @@ namespace GHOSTWing
         // Entitlements
         private EntitlementService entitlementService = new EntitlementService();
         private UserEntitlements? currentEntitlements;
+
+        // Tactical Peek State
+        private Thread? _peekThread;
+        private bool _peekRunning = false;
+        private bool _isPeekToggled = false;
+
+        private bool isCursorVisible = true;
 
 
 
@@ -151,6 +158,12 @@ namespace GHOSTWing
             sliderHorizontal.ValueChanged += (s, e) => _cachedHorizontal = sliderHorizontal.Value;
             sliderDelay.ValueChanged += (s, e) => _cachedDelay = (int)sliderDelay.Value;
             sliderJitter.ValueChanged += (s, e) => _cachedJitter = sliderJitter.Value;
+            sliderPeekShow.ValueChanged += SliderPeek_ValueChanged;
+            sliderPeekHide.ValueChanged += SliderPeek_ValueChanged;
+
+            _peekRunning = true;
+            _peekThread = new Thread(PeekLoop) { IsBackground = true };
+            _peekThread.Start();
 
             Loaded += MainWindow_Loaded;
             Closing += MainWindow_Closing;
@@ -235,12 +248,25 @@ namespace GHOSTWing
                 chkStartMinimized.IsChecked = settingsManager.Settings.StartMinimized;
                 chkAutoPause.IsChecked = settingsManager.Settings.AutoPauseInMenus;
                 chkAiRecoil.IsChecked = settingsManager.Settings.AdaptiveRecoilEnabled;
+                chkVehicleIntelligence.IsChecked = settingsManager.Settings.VehicleIntelligenceEnabled;
                 sliderOpacity.Value = settingsManager.Settings.AppOpacity;
                 this.Opacity = settingsManager.Settings.AppOpacity;
                 try { File.AppendAllText(debugPath, "UI Setup OK\n"); } catch { }
                 
                 btnStreamerMode.IsChecked = settingsManager.Settings.IsStreamerMode;
                 UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
+
+                // Tactical Peek UI Restore
+                chkPeekEnabled.IsChecked = settingsManager.Settings.PeekEnabled;
+                chkPeekAutoFire.IsChecked = settingsManager.Settings.PeekAutoFire;
+                rbPeekHold.IsChecked = settingsManager.Settings.PeekModeHold;
+                rbPeekToggle.IsChecked = !settingsManager.Settings.PeekModeHold;
+                btnPeekActivation.Content = settingsManager.Settings.PeekActivationKey;
+                btnGameCrouchKey.Content = settingsManager.Settings.GameCrouchKey;
+                sliderPeekShow.Value = settingsManager.Settings.PeekShowMs;
+                sliderPeekHide.Value = settingsManager.Settings.PeekHideMs;
+                txtPeekShowMs.Text = settingsManager.Settings.PeekShowMs.ToString();
+                txtPeekHideMs.Text = settingsManager.Settings.PeekHideMs.ToString();
 
                 // Restore Activation Mode
                 if (settingsManager.Settings.ActivationMode == "LeftOnly")
@@ -453,7 +479,6 @@ namespace GHOSTWing
                             btnUpdateStatusTitle.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#D32F2F") ?? System.Windows.Media.Brushes.Red;
                             txtUpdateStatus.Text = "New version available for download";
                             txtUpdateStatus.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#1DB954") ?? System.Windows.Media.Brushes.Green;
-                            
                             txtBadgeVersion.Text = "v" + latestVersion + " ↓";
                             txtBadgeVersion.Foreground = (System.Windows.Media.Brush?)new BrushConverter().ConvertFrom("#1DB954") ?? System.Windows.Media.Brushes.Green;
                             txtBadgeArrow.Visibility = Visibility.Collapsed; // We added it to the text directly
@@ -637,6 +662,16 @@ namespace GHOSTWing
                     return;
                 }
 
+                // Check for Peek Toggle
+                if (!string.IsNullOrEmpty(settingsManager.Settings.PeekActivationKey) && shortcut == settingsManager.Settings.PeekActivationKey)
+                {
+                    if (!settingsManager.Settings.PeekModeHold)
+                    {
+                        _isPeekToggled = !_isPeekToggled;
+                        ShowHUD(_isPeekToggled ? "PEEK: ON" : "PEEK: OFF");
+                    }
+                }
+
 
                 // Check for Preset shortcut
                 if (hotkeyPresetMap.TryGetValue(shortcut, out string? foundName) && foundName != null)
@@ -803,7 +838,28 @@ namespace GHOSTWing
                     }
                 }
             }
+            else if (listeningFor == "btnPeekActivation")
+            {
+                settingsManager.Settings.PeekActivationKey = shortcut;
+                settingsManager.Save();
+                btnPeekActivation.Content = shortcut;
+            }
+            else if (listeningFor == "btnGameCrouchKey")
+            {
+                settingsManager.Settings.GameCrouchKey = shortcut;
+                settingsManager.Save();
+                btnGameCrouchKey.Content = shortcut;
+            }
             listeningFor = "";
+        }
+
+        private void Hotkey_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is System.Windows.Controls.Button btn)
+            {
+                btn.Content = "Listening...";
+                listeningFor = btn.Name;
+            }
         }
 
         private void btnSetToggleShortcut_Click(object? sender, RoutedEventArgs? e)
@@ -1091,6 +1147,7 @@ namespace GHOSTWing
             }
 
             // 2. Feature Locking (Keep these specific as they link to different control types)
+            UpdateFeatureLock("TacticalPeek", chkPeekEnabled, badgeVipPeek);
             UpdateFeatureLock("JitterEngine", chkAiRecoil, badgeVipJitter);
             UpdateFeatureLock("AutoPause", chkAutoPause, null);
             UpdateFeatureLock("EngineStatus", btnRecoilStatus, badgeVipEngine);
@@ -1144,6 +1201,21 @@ namespace GHOSTWing
         {
             if (txtJitterValue != null)
                 txtJitterValue.Text = e.NewValue.ToString("F1");
+            if (settingsManager != null) settingsManager.Settings.JitterStrength = e.NewValue;
+        }
+
+        private void SliderPeek_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (txtPeekShowMs != null && sender == sliderPeekShow)
+            {
+                txtPeekShowMs.Text = ((int)e.NewValue).ToString();
+                if (settingsManager != null) settingsManager.Settings.PeekShowMs = (int)e.NewValue;
+            }
+            if (txtPeekHideMs != null && sender == sliderPeekHide)
+            {
+                txtPeekHideMs.Text = ((int)e.NewValue).ToString();
+                if (settingsManager != null) settingsManager.Settings.PeekHideMs = (int)e.NewValue;
+            }
         }
 
         private void UpdateFeatureLock(string key, System.Windows.Controls.Primitives.ToggleButton toggle, Border? badge)
@@ -1600,9 +1672,13 @@ namespace GHOSTWing
                             // 5. Dynamic Stability Pull
                             double basePull = ((_internalAiStrength * 0.022) + 0.05) * normalization;
                             
-                            // 6. Tracking Awareness: Reduce jitter during horizontal swipes for smoother tracking
-                            double horizontalMotion = Math.Abs(physical.X);
-                            double jitterMod = Math.Max(0.2, 1.0 - (horizontalMotion / 5.0));
+                            // 6. Tracking Awareness / Vehicle Intel: Reduce jitter during horizontal swipes for smoother tracking/steering
+                            double jitterMod = 1.0;
+                            if (s.VehicleIntelligenceEnabled)
+                            {
+                                double horizontalMotion = Math.Abs(physical.X);
+                                jitterMod = Math.Max(0.2, 1.0 - (horizontalMotion / 5.0));
+                            }
                             
                             accumulatedY += (jitterVal * jitterMod + basePull) * transparency;
 
@@ -1628,7 +1704,12 @@ namespace GHOSTWing
 
                             if (moveX != 0 || moveY != 0)
                             {
-                                MoveCursorRelative(moveX, moveY);
+                                INPUT input = new INPUT();
+                                input.type = INPUT_MOUSE;
+                                input.mi.dx = moveX;
+                                input.mi.dy = moveY;
+                                input.mi.dwFlags = MOUSEEVENTF_MOVE;
+                                SendInput(1, new INPUT[] { input }, Marshal.SizeOf(typeof(INPUT)));
                             }
 
                             // Force 1ms precision for the Jitter Engine
@@ -1702,11 +1783,12 @@ namespace GHOSTWing
             SendInput((uint)inputs.Length, inputs, Marshal.SizeOf(typeof(INPUT)));
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Explicit)]
         struct INPUT
         {
-            public uint type;
-            public MOUSEINPUT mi;
+            [FieldOffset(0)] public uint type;
+            [FieldOffset(8)] public MOUSEINPUT mi;
+            [FieldOffset(8)] public KEYBDINPUT ki;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -1715,6 +1797,16 @@ namespace GHOSTWing
             public int dx;
             public int dy;
             public uint mouseData;
+            public uint dwFlags;
+            public uint time;
+            public IntPtr dwExtraInfo;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct KEYBDINPUT
+        {
+            public ushort wVk;
+            public ushort wScan;
             public uint dwFlags;
             public uint time;
             public IntPtr dwExtraInfo;
@@ -1729,6 +1821,7 @@ namespace GHOSTWing
             settingsManager.Settings.StartMinimized = chkStartMinimized.IsChecked == true;
             settingsManager.Settings.AutoPauseInMenus = chkAutoPause.IsChecked == true;
             settingsManager.Settings.AdaptiveRecoilEnabled = chkAiRecoil.IsChecked == true;
+            settingsManager.Settings.VehicleIntelligenceEnabled = chkVehicleIntelligence.IsChecked == true;
             settingsManager.Settings.PriorityClass = (comboPriority.SelectedItem as ComboBoxItem)?.Content.ToString() ?? "High";
             
             settingsManager.Save();
@@ -1857,6 +1950,87 @@ namespace GHOSTWing
                 ShowNotification("UUID Copied!", "Success");
             }
             catch { }
+        }
+
+        private void PeekLoop()
+        {
+            while (_peekRunning)
+            {
+                try
+                {
+                    var s = settingsManager.Settings;
+                    bool active = false;
+
+                    if (s.PeekEnabled && isCursorVisible == false)
+                    {
+                        if (s.PeekModeHold)
+                        {
+                            // Detect if the activation key is physically held
+                            Key key = (Key)Enum.Parse(typeof(Key), s.PeekActivationKey);
+                            int vk = KeyInterop.VirtualKeyFromKey(key);
+                            active = (GetAsyncKeyState(vk) & 0x8000) != 0;
+                        }
+                        else
+                        {
+                            active = _isPeekToggled;
+                        }
+
+                        if (active)
+                        {
+                            // 1. STAND UP (Release Crouch Key)
+                            SimulateKey(s.GameCrouchKey, false); 
+                            
+                            // 2. FIRE (If linked)
+                            if (s.PeekAutoFire)
+                                SimulateMouse(VK_LBUTTON, true); // Press
+                            
+                            Thread.Sleep(s.PeekShowMs);
+                            
+                            // 3. STOP FIRE
+                            if (s.PeekAutoFire)
+                                SimulateMouse(VK_LBUTTON, false); // Release
+                                
+                            // 4. CROUCH DOWN (Press Crouch Key)
+                            SimulateKey(s.GameCrouchKey, true); // true = Press
+                            
+                            Thread.Sleep(s.PeekHideMs);
+                            continue; // Skip the rest of the loop
+                        }
+                    }
+                    
+                    Thread.Sleep(50);
+                }
+                catch { Thread.Sleep(100); }
+            }
+        }
+
+        private void SimulateKey(string keyName, bool down)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(keyName)) return;
+                Key key = (Key)Enum.Parse(typeof(Key), keyName);
+                int vk = KeyInterop.VirtualKeyFromKey(key);
+                
+                INPUT input = new INPUT();
+                input.type = 1; // INPUT_KEYBOARD
+                input.ki.wVk = (ushort)vk;
+                input.ki.dwFlags = down ? 0u : 0x0002u; // 0 = Down, 2 = Up
+                SendInput(1, new INPUT[] { input }, Marshal.SizeOf(typeof(INPUT)));
+            }
+            catch { }
+        }
+
+        private void SimulateMouse(int vKey, bool down)
+        {
+            INPUT input = new INPUT();
+            input.type = 0; // INPUT_MOUSE
+            uint flag = 0;
+            if (vKey == VK_LBUTTON) flag = down ? 0x0002u : 0x0004u; // LEFTDOWN, LEFTUP
+            if (vKey == VK_RBUTTON) flag = down ? 0x0008u : 0x0010u; // RIGHTDOWN, RIGHTUP
+            
+            input.mi.dwFlags = flag;
+            SendInput(1, new INPUT[] { input }, Marshal.SizeOf(typeof(INPUT)));
         }
     }
 

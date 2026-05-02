@@ -57,6 +57,7 @@ namespace GHOSTWing
             { "EngineStatus", true },
             { "StreamerMode", true },
             { "JitterEngine", true }, 
+            { "TacticalPeek", true },
             { "AutoPause", false },
             { "CrosshairActive", true },
             { "StartWithWindows", true },

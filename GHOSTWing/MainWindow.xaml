@@ -133,6 +133,14 @@
             <Setter Property="Background" Value="#F43F5E"/>
         </Style>
 
+        <Style x:Key="ModernButton" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Background" Value="#101010"/>
+            <Setter Property="BorderBrush" Value="#333333"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Foreground" Value="#06B6D4"/>
+            <Setter Property="Padding" Value="5,2"/>
+        </Style>
+
         <!-- Labels -->
         <Style TargetType="Label">
             <Setter Property="Foreground" Value="White"/>
@@ -583,7 +591,7 @@
                                     <TextBlock Text="VIP" Foreground="Black" FontSize="8" FontWeight="Black"/>
                                 </Border>
                             </Grid>
-                            
+
                             <Border BorderBrush="#27272A" BorderThickness="0,1,0,0" Margin="10,8"/>
                             <TextBlock Text="MARKETPLACE" FontSize="10" FontWeight="Bold" Foreground="#444444" Margin="12,0,0,10"/>
                             <RadioButton x:Name="NavVipCart" GroupName="SidebarNav" Style="{StaticResource NavButton}" Content="VIP CART" Tag="M5,16L3,5L8.5,10L12,4L15.5,10L21,5L19,16H5M19,19A1,1 0 0,1 18,20H6A1,1 0 0,1 5,19V18H19V19Z" Checked="NavCart_Checked"/>
@@ -697,14 +705,14 @@
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
-                                                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                                             <TextBlock Text="ENGINE STATUS:" Foreground="#52525B" FontSize="9.5" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                                                             <ToggleButton Name="btnRecoilStatus" Style="{StaticResource StreamerToggleStyle}" Click="btnRecoilStatus_Click"/>
-                                                             <Border Name="badgeVipEngine" Background="#1010B981" BorderBrush="#10B981" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" Visibility="Collapsed" VerticalAlignment="Center">
+                                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                                            <TextBlock Text="ENGINE STATUS:" Foreground="#52525B" FontSize="9.5" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                                            <ToggleButton Name="btnRecoilStatus" Style="{StaticResource StreamerToggleStyle}" Click="btnRecoilStatus_Click"/>
+                                                            <Border Name="badgeVipEngine" Background="#1010B981" BorderBrush="#10B981" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="8,0,0,0" Visibility="Collapsed" VerticalAlignment="Center">
                                                                 <TextBlock Text="VIP" Foreground="#10B981" FontSize="8" FontWeight="Black"/>
-                                                             </Border>
-                                                             <TextBlock Name="txtEngineStatus" Text="OFFLINE" Foreground="#D32F2F" FontWeight="Black" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                                                         </StackPanel>
+                                                            </Border>
+                                                            <TextBlock Name="txtEngineStatus" Text="OFFLINE" Foreground="#D32F2F" FontWeight="Black" FontSize="11" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                                        </StackPanel>
                                                         <Button Grid.Column="1" Name="btnHide" Content="SEND TO TRAY" Width="120" Height="32" Background="#111111" Click="btnHide_Click" BorderBrush="#222222" FontSize="11"/>
                                                     </Grid>
                                                 </StackPanel>
@@ -713,11 +721,11 @@
                                                 <Border Grid.Column="1" Background="#080808" CornerRadius="12" BorderBrush="#222222" BorderThickness="1" Padding="15">
                                                     <StackPanel VerticalAlignment="Center">
                                                         <TextBlock Text="STEALTH MODE" FontSize="10" FontWeight="Black" Foreground="#444444" HorizontalAlignment="Center" Margin="0,0,0,15"/>
-                                                         <ToggleButton Name="btnStreamerMode" Style="{StaticResource StreamerToggleStyle}" Click="btnStreamerMode_Click" HorizontalAlignment="Center"/>
-                                                         <Border Name="badgeVipStreamer" Background="#1010B981" BorderBrush="#10B981" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="0,5,0,0" Visibility="Collapsed" HorizontalAlignment="Center">
+                                                        <ToggleButton Name="btnStreamerMode" Style="{StaticResource StreamerToggleStyle}" Click="btnStreamerMode_Click" HorizontalAlignment="Center"/>
+                                                        <Border Name="badgeVipStreamer" Background="#1010B981" BorderBrush="#10B981" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="0,5,0,0" Visibility="Collapsed" HorizontalAlignment="Center">
                                                             <TextBlock Text="VIP ONLY" Foreground="#10B981" FontSize="8" FontWeight="Black"/>
-                                                         </Border>
-                                                         <TextBlock Text="ANTI-CAPTURE" FontSize="9" Foreground="#666666" Margin="0,15,0,0" HorizontalAlignment="Center"/>
+                                                        </Border>
+                                                        <TextBlock Text="ANTI-CAPTURE" FontSize="9" Foreground="#666666" Margin="0,15,0,0" HorizontalAlignment="Center"/>
                                                         <TextBlock Text="&amp; TASKBAR HIDE" FontSize="9" Foreground="#666666" HorizontalAlignment="Center"/>
                                                     </StackPanel>
                                                 </Border>
@@ -992,110 +1000,166 @@
                         <!-- Page 2: Engine & Intelligence -->
                         <TabItem>
                             <Grid>
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" Padding="0,0,4,0">
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                     <Grid Margin="15">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
                                             <ColumnDefinition Width="*"/>
                                         </Grid.ColumnDefinitions>
 
-                                        <!-- Left Column: Intelligent Detection -->
-                                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                            <GroupBox Header="SMART DETECTION" Style="{StaticResource CardGroupBox}">
-                                                <StackPanel>
+                                        <!-- LEFT: SMART DETECTION -->
+                                        <GroupBox Grid.Column="0" Header="SMART DETECTION" Style="{StaticResource CardGroupBox}" Margin="0,0,10,0" VerticalAlignment="Stretch">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <StackPanel Grid.Row="0">
                                                     <Grid Margin="0,5">
                                                         <Grid.ColumnDefinitions>
                                                             <ColumnDefinition Width="*"/>
                                                             <ColumnDefinition Width="Auto"/>
                                                         </Grid.ColumnDefinitions>
                                                         <StackPanel>
-                                                            <TextBlock Text="AI Recoil Control PRO" Foreground="#10B981" FontSize="12" FontWeight="SemiBold"/>
-                                                            <TextBlock Text="Intelligently boosts pull-down intent. Works for all guns." Foreground="#71717A" FontSize="10" TextWrapping="Wrap" Margin="0,2,20,0"/>
-                                                            <StackPanel Orientation="Horizontal">
-                                                                <TextBlock Text="* Requires Engine to be STARTED to function." Foreground="#F59E0B" FontSize="9" FontWeight="Medium" Margin="0,4,0,0"/>
-                                                                <Border Name="badgeVipJitter" Background="#1010B981" BorderBrush="#10B981" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="10,4,0,0" Visibility="Collapsed">
-                                                                    <TextBlock Text="VIP ONLY" Foreground="#10B981" FontSize="8" FontWeight="Black"/>
-                                                                </Border>
-                                                            </StackPanel>
+                                                            <TextBlock Text="AI RECOIL CONTROL" Foreground="#10B981" FontSize="13" FontWeight="Bold"/>
+                                                            <TextBlock Text="Dynamically boosts pull-down intent based on firing duration." Foreground="#888888" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="16"/>
+                                                            <Border Name="badgeVipJitter" Background="#1010B981" BorderBrush="#10B981" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="0,6,0,0" Visibility="Collapsed" HorizontalAlignment="Left">
+                                                                <TextBlock Text="VIP ONLY" Foreground="#10B981" FontSize="9" FontWeight="Black"/>
+                                                            </Border>
                                                         </StackPanel>
                                                         <ToggleButton Grid.Column="1" Name="chkAiRecoil" Style="{StaticResource StreamerToggleStyle}" Click="SettingChanged_Click"/>
                                                     </Grid>
 
-                                                    <StackPanel Margin="0,10,0,15">
-                                                        <Border Name="borderJitterStatus" Background="#09090B" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8" Padding="15,12">
-                                                            <StackPanel>
-                                                                <Grid>
-                                                                    <TextBlock Name="txtJitterTitle" Text="UNIVERSAL JITTER ENGINE (GOD MODE)" Foreground="#10B981" FontSize="11" FontWeight="Bold"/>
-                                                                    <TextBlock Name="txtJitterStatus" Text="ACTIVE" Foreground="#10B981" FontSize="10" FontWeight="Black" HorizontalAlignment="Right"/>
-                                                                </Grid>
-                                                                <TextBlock Text="Engine utilizes high-frequency vertical jitter (1,000Hz) to neutralize weapon physics. Absolute 0-recoil performance for all PUBG weapons." Foreground="#71717A" FontSize="9.5" TextWrapping="Wrap" Margin="0,8,0,0"/>
+                                                    <Border Name="borderJitterStatus" Background="#09090B" BorderBrush="#10B981" BorderThickness="1" CornerRadius="8" Padding="14" Margin="0,15">
+                                                        <StackPanel>
+                                                            <Grid>
+                                                                <TextBlock Name="txtJitterTitle" Text="JITTER ENGINE (GOD MODE)" Foreground="#10B981" FontSize="11" FontWeight="Bold"/>
+                                                                <TextBlock Name="txtJitterStatus" Text="ACTIVE" Foreground="#10B981" FontSize="10" FontWeight="Black" HorizontalAlignment="Right"/>
+                                                            </Grid>
+                                                            <TextBlock Text="1,000Hz vertical jitter to neutralize weapon physics." Foreground="#888888" FontSize="11" Margin="0,8,0,12" TextWrapping="Wrap" LineHeight="16"/>
+                                                            <Grid Margin="0,0,0,5">
+                                                                <TextBlock Text="INTENSITY" Foreground="#71717A" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                                <TextBlock Name="txtJitterValue" Text="0.8" Foreground="White" FontSize="14" FontWeight="Black" HorizontalAlignment="Right"/>
+                                                            </Grid>
+                                                            <Slider Name="sliderJitter" Minimum="0" Maximum="2" Value="0.8" ValueChanged="sliderJitter_ValueChanged"/>
+                                                        </StackPanel>
+                                                    </Border>
 
-                                                                <Grid Margin="0,12,0,0">
-                                                                    <Grid.ColumnDefinitions>
-                                                                        <ColumnDefinition Width="Auto"/>
-                                                                        <ColumnDefinition Width="*"/>
-                                                                    </Grid.ColumnDefinitions>
-                                                                    <StackPanel Orientation="Horizontal">
-                                                                        <TextBlock Text="Jitter INTENSITY" Foreground="#10B981" FontSize="9" FontWeight="Bold" VerticalAlignment="Center"/>
-                                                                        <TextBlock Name="txtJitterValue" Text="0.8" Foreground="White" FontSize="14" FontWeight="Black" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                                                                    </StackPanel>
-                                                                    <Slider Grid.Column="1" Name="sliderJitter" Minimum="0" Maximum="2" Value="0.8" Margin="15,0,0,0" ValueChanged="sliderJitter_ValueChanged"/>
-                                                                </Grid>
-                                                            </StackPanel>
-                                                        </Border>
+                                                    <TextBlock Text="GAME CONFIGURATION" Foreground="#52525B" FontSize="10" FontWeight="Bold" Margin="0,0,0,8"/>
+                                                    <UniformGrid Columns="3" Margin="0,0,0,15">
+                                                        <StackPanel Margin="0,0,5,0">
+                                                            <TextBlock Text="VERT MULTI" Foreground="#71717A" FontSize="9" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                                                            <TextBox Name="txtGameVertSens" Style="{StaticResource ModernTextBox}" Text="1.0" TextChanged="Calibration_TextChanged" FontSize="11"/>
+                                                        </StackPanel>
+                                                        <StackPanel Margin="5,0,5,0">
+                                                            <TextBlock Text="ADS SENSI" Foreground="#71717A" FontSize="9" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                                                            <TextBox Name="txtGameADSSens" Style="{StaticResource ModernTextBox}" Text="50" TextChanged="Calibration_TextChanged" FontSize="11"/>
+                                                        </StackPanel>
+                                                        <StackPanel Margin="5,0,0,0">
+                                                            <TextBlock Text="MOUSE DPI" Foreground="#71717A" FontSize="9" Margin="0,0,0,4" FontWeight="SemiBold"/>
+                                                            <TextBox Name="txtMouseDpi" Style="{StaticResource ModernTextBox}" Text="800" TextChanged="Calibration_TextChanged" FontSize="11"/>
+                                                        </StackPanel>
+                                                    </UniformGrid>
 
-                                                        <!-- Game Config Section -->
-                                                        <TextBlock Text="GAME CONFIGURATION (PUBG)" Foreground="#52525B" FontSize="9" FontWeight="Bold" Margin="0,15,0,8"/>
-                                                        <UniformGrid Columns="3" Margin="0,0,0,10">
-                                                            <StackPanel Margin="0,0,5,0">
-                                                                <TextBlock Text="VERT MULTI" Foreground="#71717A" FontSize="8" Margin="0,0,0,4"/>
-                                                                <TextBox Name="txtGameVertSens" Style="{StaticResource ModernTextBox}" Text="1.0" TextChanged="Calibration_TextChanged"/>
-                                                            </StackPanel>
-                                                            <StackPanel Margin="5,0,5,0">
-                                                                <TextBlock Text="ADS SENSI" Foreground="#71717A" FontSize="8" Margin="0,0,0,4"/>
-                                                                <TextBox Name="txtGameADSSens" Style="{StaticResource ModernTextBox}" Text="50" TextChanged="Calibration_TextChanged"/>
-                                                            </StackPanel>
-                                                            <StackPanel Margin="5,0,0,0">
-                                                                <TextBlock Text="MOUSE DPI" Foreground="#71717A" FontSize="8" Margin="0,0,0,4"/>
-                                                                <TextBox Name="txtMouseDpi" Style="{StaticResource ModernTextBox}" Text="800" TextChanged="Calibration_TextChanged"/>
-                                                            </StackPanel>
-                                                        </UniformGrid>
-                                                        <TextBlock Text="* Set these to match your PUBG settings for perfect normalization." Foreground="#52525B" FontSize="8" FontStyle="Italic" Margin="0,0,0,5"/>
-                                                    </StackPanel>
+                                                    <TextBlock Text="DYNAMIC AUTO-PAUSE" Foreground="#FAFAFA" FontSize="13" FontWeight="Bold"/>
+                                                    <TextBlock Text="Automatically pauses all logic when Tab or Esc menus are open." Foreground="#888888" FontSize="11" Margin="0,4,0,8" TextWrapping="Wrap" LineHeight="16"/>
+                                                    <CheckBox Name="chkAutoPause" Content="Enable Auto-Pause" Foreground="#FAFAFA" FontSize="12" Click="SettingChanged_Click" Margin="0,0,0,10"/>
 
-                                                    <TextBlock Text="DETECTION RULES" Foreground="#666666" FontSize="10" FontWeight="Bold" Margin="0,5,0,10"/>
+                                                    <TextBlock Text="VEHICLE INTELLIGENCE" Foreground="#FAFAFA" FontSize="13" FontWeight="Bold"/>
+                                                    <TextBlock Text="Reduces jitter intensity while driving for smooth steering control." Foreground="#888888" FontSize="11" Margin="0,4,0,8" TextWrapping="Wrap" LineHeight="16"/>
+                                                    <CheckBox Name="chkVehicleIntelligence" Content="Enable Vehicle Intel" Foreground="#FAFAFA" FontSize="12" Click="SettingChanged_Click" Margin="0,0,0,15"/>
+                                                </StackPanel>
+
+                                                <Border Grid.Row="2" Background="#05FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#222" BorderThickness="1">
                                                     <StackPanel>
-                                                        <CheckBox Name="chkAutoPause" Content="Dynamic Pause (Tab/Esc)" Foreground="#FAFAFA" FontSize="11" Margin="0,0,0,8" Checked="SettingChanged_Click" Unchecked="SettingChanged_Click"/>
-                                                        <TextBlock Text="Automatically pauses all recoil adjustments when UI menus are open to prevent mouse drift." Foreground="#71717A" FontSize="9.5" TextWrapping="Wrap" Margin="24,0,0,15"/>
-
-                                                        <CheckBox Name="chkVehicleDetection" Content="Vehicle Intelligence" Foreground="#FAFAFA" FontSize="11" Margin="0,0,0,8" IsChecked="True" IsEnabled="False"/>
-                                                        <TextBlock Text="Reduces jitter intensity while driving to ensure smooth steering control." Foreground="#71717A" FontSize="9.5" TextWrapping="Wrap" Margin="24,0,0,10"/>
+                                                        <TextBlock Text="OPERATIONAL TIPS" Foreground="#10B981" FontSize="10" FontWeight="Black" Margin="0,0,0,8"/>
+                                                        <TextBlock Text="• AI Recoil: Automates pull intent during Left-Click fire." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="• Jitter: Neutralizes kick; 0.8-1.2 is the pro standard." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="• Vehicle Intel: Smoother steering during driving." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="• Calibration: Match in-game settings for best precision." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="• Auto-Pause: Automatic detection of menus and maps." Foreground="#888888" FontSize="10.5"/>
                                                     </StackPanel>
-                                                </StackPanel>
-                                            </GroupBox>
-                                        </StackPanel>
+                                                </Border>
+                                            </Grid>
+                                        </GroupBox>
 
-                                        <!-- Right Column: Pro Tips & Insights -->
-                                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
-                                            <GroupBox Header="SYSTEM INTELLIGENCE" Style="{StaticResource CardGroupBox}">
-                                                <StackPanel>
-                                                    <TextBlock Text="HOW IT WORKS" Foreground="#10B981" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                                    <TextBlock Text="GHOSTWing uses high-frequency system calls to monitor game states. When 'Auto-Pause' is enabled, the engine verifies 1,000 times per second if the system cursor has been requested by the game." Foreground="#71717A" FontSize="10" TextWrapping="Wrap"/>
+                                        <!-- RIGHT: TACTICAL PEEK ENGINE -->
+                                        <GroupBox Grid.Column="1" Header="TACTICAL PEEK ENGINE" Style="{StaticResource CardGroupBox}" Margin="10,0,0,0" VerticalAlignment="Stretch">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="*"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <StackPanel Grid.Row="0">
+                                                    <Grid Margin="0,5">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel>
+                                                            <TextBlock Text="ENABLE PEEK ENGINE" Foreground="#06B6D4" FontSize="13" FontWeight="Bold"/>
+                                                            <TextBlock Text="Automated hide-and-fire rhythm for window combat." Foreground="#888888" FontSize="11" Margin="0,4,0,0" TextWrapping="Wrap" LineHeight="16"/>
+                                                            <Border Name="badgeVipPeek" Background="#1006B6D4" BorderBrush="#06B6D4" BorderThickness="1" CornerRadius="4" Padding="6,1" Margin="0,6,0,0" Visibility="Collapsed" HorizontalAlignment="Left">
+                                                                <TextBlock Text="DIAMOND ONLY" Foreground="#06B6D4" FontSize="9" FontWeight="Black"/>
+                                                            </Border>
+                                                        </StackPanel>
+                                                        <ToggleButton Grid.Column="1" Name="chkPeekEnabled" Style="{StaticResource StreamerToggleStyle}" Click="SettingChanged_Click"/>
+                                                    </Grid>
 
                                                     <Border BorderBrush="#27272A" BorderThickness="0,1,0,0" Margin="0,15"/>
 
-                                                    <TextBlock Text="PRECISION ENGINE" Foreground="#FAFAFA" FontSize="11" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                                                    <TextBlock Text="The hybrid Sleep/Spin wait system ensures sub-millisecond precision for mouse movement, matching the engine performance of low-level driver-based solutions." Foreground="#71717A" FontSize="10" TextWrapping="Wrap"/>
+                                                    <TextBlock Text="ACTIVATION MODE" Foreground="#52525B" FontSize="10" FontWeight="Bold" Margin="0,0,0,8"/>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                                                        <RadioButton Name="rbPeekHold" Content="HOLD" Foreground="#FAFAFA" FontSize="11" IsChecked="True" GroupName="PeekMode" Click="SettingChanged_Click" FontWeight="SemiBold"/>
+                                                        <RadioButton Name="rbPeekToggle" Content="TOGGLE" Foreground="#FAFAFA" FontSize="11" Margin="20,0,0,0" GroupName="PeekMode" Click="SettingChanged_Click" FontWeight="SemiBold"/>
+                                                    </StackPanel>
 
-                                                    <Border BorderBrush="#27272A" BorderThickness="0,1,0,0" Margin="0,15"/>
+                                                    <TextBlock Text="SYNC AUTO-FIRE" Foreground="#FAFAFA" FontSize="12" FontWeight="Bold"/>
+                                                    <TextBlock Text="Only fires when character is standing. (Requires 'Hold' Crouch)" Foreground="#888888" FontSize="11" Margin="0,4,0,10" TextWrapping="Wrap" LineHeight="16"/>
+                                                    <CheckBox Name="chkPeekAutoFire" Content="Enable Linkage" Foreground="#FAFAFA" FontSize="12" Click="SettingChanged_Click" Margin="0,0,0,15"/>
 
-                                                    <TextBlock Text="ADAPTIVE INTELLIGENCE (FULL)" Foreground="#10B981" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                                    <TextBlock Text="V2.0 Velocity-Mapping Engine: The system now calculates the exact upward climb of weapon physics and applies an equal-and-opposite force in real-time. This eliminates the need for individual weapon presets." Foreground="#71717A" FontSize="10" TextWrapping="Wrap"/>
+                                                    <UniformGrid Columns="2" Margin="0,10,0,15">
+                                                        <StackPanel Margin="0,0,8,0">
+                                                            <TextBlock Text="TRIGGER KEY" Foreground="#71717A" FontSize="10" Margin="0,0,0,6" FontWeight="SemiBold"/>
+                                                            <Button Name="btnPeekActivation" Content="None" Style="{StaticResource ModernButton}" Height="30" FontSize="11" Click="Hotkey_Click"/>
+                                                        </StackPanel>
+                                                        <StackPanel Margin="8,0,0,0">
+                                                            <TextBlock Text="CROUCH KEY" Foreground="#71717A" FontSize="10" Margin="0,0,0,6" FontWeight="SemiBold"/>
+                                                            <Button Name="btnGameCrouchKey" Content="C" Style="{StaticResource ModernButton}" Height="30" FontSize="11" Click="Hotkey_Click"/>
+                                                        </StackPanel>
+                                                    </UniformGrid>
+
+                                                    <Grid Margin="0,8,0,5">
+                                                        <TextBlock Text="FIRE DURATION (ms)" Foreground="#71717A" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                        <TextBlock Name="txtPeekShowMs" Text="350" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                                    </Grid>
+                                                    <Slider Name="sliderPeekShow" Minimum="100" Maximum="1000" Value="350" ValueChanged="SliderPeek_ValueChanged"/>
+                                                    
+                                                    <Grid Margin="0,15,0,5">
+                                                        <TextBlock Text="HIDE DURATION (ms)" Foreground="#71717A" FontSize="10" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                                        <TextBlock Name="txtPeekHideMs" Text="400" Foreground="White" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right"/>
+                                                    </Grid>
+                                                    <Slider Name="sliderPeekHide" Minimum="100" Maximum="1000" Value="400" ValueChanged="SliderPeek_ValueChanged" Margin="0,0,0,15"/>
                                                 </StackPanel>
-                                            </GroupBox>
-                                        </StackPanel>
+
+                                                <Border Grid.Row="2" Background="#05FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#222" BorderThickness="1">
+                                                    <StackPanel>
+                                                        <TextBlock Text="TACTICAL INSIGHTS" Foreground="#10B981" FontSize="10" FontWeight="Black" Margin="0,0,0,8"/>
+                                                        <TextBlock Text="• Engine: Hold Activation Key to peek/fire, release to hide." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="• Logic: Linkage prevents firing while crouched in hiding." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="• Setup: Set a Trigger Key and match your Game Crouch key." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
+                                                        <TextBlock Text="• Timing: 350/400ms is standard; adjust for faster rhythm." Foreground="#888888" FontSize="10.5"/>
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+                                        </GroupBox>
                                     </Grid>
                                 </ScrollViewer>
+
 
                                 <!-- Lock Screen Overlay -->
                                 <Border Name="overlayIntelligence" Background="#AA000000" CornerRadius="12" Visibility="Collapsed">
@@ -1211,7 +1275,7 @@
                                                     <TextBlock Text="GHOSTWing - GHOST-404" Foreground="#FAFAFA" FontWeight="Black" FontSize="14" HorizontalAlignment="Center"/>
                                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                                         <TextBlock Text="Version " Foreground="#71717A" FontSize="10"/>
-                                                        <TextBlock Name="txtSettingsVersion" Text="1.0.3" Foreground="#10B981" FontSize="10" FontWeight="Bold"/>
+                                                        <TextBlock Name="txtSettingsVersion" Text="1.0.4" Foreground="#10B981" FontSize="10" FontWeight="Bold"/>
                                                     </StackPanel>
                                                     <TextBlock Text="© 2026 GHOST-404" Foreground="#3F3F46" FontSize="9" Margin="0,5,0,0" HorizontalAlignment="Center"/>
                                                 </StackPanel>
