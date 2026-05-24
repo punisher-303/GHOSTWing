@@ -22,6 +22,11 @@ namespace GHOSTWing
         public bool ShowOnScreenHUD { get; set; } = true;
         public string ActivationMode { get; set; } = "RightAndLeft";
         public string LastSelectedPreset { get; set; } = "";
+        
+        // Cached Manual Sliders
+        public double LastVertical { get; set; } = 0;
+        public double LastHorizontal { get; set; } = 0;
+        public int LastDelay { get; set; } = 0;
 
         // Game Specific Calibration
         public double GameVerticalSens { get; set; } = 1.0;
@@ -41,6 +46,13 @@ namespace GHOSTWing
         public bool HideOnADS { get; set; } = false;
 
 
+
+        // Stats Overlay Settings
+        public bool StatsOverlayEnabled { get; set; } = false;
+        public int StatsOverlayColorIndex { get; set; } = 1; // Default to Red (matching crosshair colors usually)
+        public double StatsOverlaySize { get; set; } = 12.0;
+        public int StatsOverlayX { get; set; } = 10;
+        public int StatsOverlayY { get; set; } = 500;
 
         // --- Precision Calibration System ---
         public bool CalibEnabled { get; set; } = true;

@@ -56,6 +56,7 @@ namespace GHOSTWing
         private double _cachedHorizontal = 0;
         private int _cachedDelay = 5;
 
+        private StatsOverlayWindow? statsOverlayWindow;
         private CrosshairWindow? crosshairWindow;
 
         // ADS Hide feature
@@ -155,12 +156,20 @@ namespace GHOSTWing
             sliderVertical.Value = 0;
             sliderHorizontal.Value = 0;
 
-            // Tray icon moved to Loaded for better stability
-            
-            // Hook up slider value caching
-            sliderVertical.ValueChanged += (s, e) => _cachedVertical = sliderVertical.Value;
-            sliderHorizontal.ValueChanged += (s, e) => _cachedHorizontal = sliderHorizontal.Value;
-            sliderDelay.ValueChanged += (s, e) => _cachedDelay = (int)sliderDelay.Value;
+            sliderVertical.ValueChanged += (s, e) => {
+                _cachedVertical = sliderVertical.Value;
+                if (statsOverlayWindow != null) statsOverlayWindow.UpdateStats(_cachedVertical, _cachedDelay);
+                if (!_isInitializing && settingsManager != null) { settingsManager.Settings.LastVertical = _cachedVertical; settingsManager.Save(); }
+            };
+            sliderHorizontal.ValueChanged += (s, e) => {
+                _cachedHorizontal = sliderHorizontal.Value;
+                if (!_isInitializing && settingsManager != null) { settingsManager.Settings.LastHorizontal = _cachedHorizontal; settingsManager.Save(); }
+            };
+            sliderDelay.ValueChanged += (s, e) => {
+                _cachedDelay = (int)sliderDelay.Value;
+                if (statsOverlayWindow != null) statsOverlayWindow.UpdateStats(_cachedVertical, _cachedDelay);
+                if (!_isInitializing && settingsManager != null) { settingsManager.Settings.LastDelay = _cachedDelay; settingsManager.Save(); }
+            };
 
 
 
@@ -295,6 +304,15 @@ namespace GHOSTWing
                     // If no last selected, auto-load the first one instead of empty
                     comboPresets.SelectedIndex = 0;
                 }
+                
+                // 4.5 Restore exact slider cached values (overrides preset if you manually tweaked them last session)
+                if (s.LastDelay > 0)
+                {
+                    sliderVertical.Value = s.LastVertical;
+                    sliderHorizontal.Value = s.LastHorizontal;
+                    sliderDelay.Value = s.LastDelay;
+                }
+
                 try { File.AppendAllText(debugPath, "Presets OK\n"); } catch { }
 
                 // 5. Restore Performance & Tray Settings
@@ -307,6 +325,7 @@ namespace GHOSTWing
 
                 // 6. Restore Crosshair & Intelligent Features
                 RestoreCrosshairSettings();
+                RestoreStatsOverlaySettings();
                 try { File.AppendAllText(debugPath, "Crosshair OK\n"); } catch { }
 
                 Dispatcher.BeginInvoke(new Action(() => _isInitializing = false), System.Windows.Threading.DispatcherPriority.ContextIdle);
@@ -1008,6 +1027,11 @@ namespace GHOSTWing
             if (MainTabControl != null) MainTabControl.SelectedIndex = 3;
         }
 
+        private void NavStatsOverlay_Checked(object sender, RoutedEventArgs e)
+        {
+            if (MainTabControl != null) MainTabControl.SelectedIndex = 7;
+        }
+
         private void NavSettings_Checked(object sender, RoutedEventArgs e)
         {
             if (MainTabControl != null) MainTabControl.SelectedIndex = 4;
@@ -1527,8 +1551,65 @@ namespace GHOSTWing
             if (_isInitializing || settingsManager == null) return;
             var s = settingsManager.Settings;
 
+            if (chkStatsOverlayEnabled != null)
+            {
+                s.StatsOverlayEnabled = chkStatsOverlayEnabled.IsChecked == true;
+                s.StatsOverlayColorIndex = comboStatsOverlayColor.SelectedIndex;
+                UpdateStatsOverlayWindow();
+            }
 
             settingsManager.Save();
+        }
+
+        private void sliderStatsOverlay_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (_isInitializing || settingsManager == null) return;
+            var s = settingsManager.Settings;
+            s.StatsOverlaySize = sliderStatsOverlaySize.Value;
+            s.StatsOverlayX = (int)sliderStatsOverlayX.Value;
+            s.StatsOverlayY = (int)sliderStatsOverlayY.Value;
+            UpdateStatsOverlayWindow();
+            settingsManager.Save();
+        }
+
+        private void RestoreStatsOverlaySettings()
+        {
+            var s = settingsManager.Settings;
+            chkStatsOverlayEnabled.IsChecked = s.StatsOverlayEnabled;
+            comboStatsOverlayColor.SelectedIndex = s.StatsOverlayColorIndex;
+            sliderStatsOverlaySize.Value = s.StatsOverlaySize;
+            sliderStatsOverlayX.Value = s.StatsOverlayX;
+            sliderStatsOverlayY.Value = s.StatsOverlayY;
+            UpdateStatsOverlayWindow();
+        }
+
+        private void UpdateStatsOverlayWindow()
+        {
+            var s = settingsManager.Settings;
+            if (s.StatsOverlayEnabled)
+            {
+                if (statsOverlayWindow == null)
+                {
+                    statsOverlayWindow = new StatsOverlayWindow();
+                }
+
+                System.Windows.Media.Color[] colors = { System.Windows.Media.Colors.White, System.Windows.Media.Colors.Red, System.Windows.Media.Colors.Lime, System.Windows.Media.Colors.DodgerBlue, System.Windows.Media.Colors.Yellow, System.Windows.Media.Colors.Cyan, System.Windows.Media.Colors.Magenta };
+                System.Windows.Media.Color color = colors[Math.Max(0, Math.Min(s.StatsOverlayColorIndex, colors.Length - 1))];
+
+                statsOverlayWindow.UpdateSettings(color, s.StatsOverlaySize, s.StatsOverlayX, s.StatsOverlayY);
+                statsOverlayWindow.UpdateStats(sliderVertical.Value, (int)sliderDelay.Value);
+                statsOverlayWindow.Show();
+                UpdateStreamerMode(s.IsStreamerMode);
+            }
+            else
+            {
+                if (statsOverlayWindow != null)
+                {
+                    statsOverlayWindow.Hide();
+                    statsOverlayWindow.Close();
+                    statsOverlayWindow = null;
+                }
+            }
         }
 
         private void DrawCrosshairOnCanvas(Canvas canvas, string shape, System.Windows.Media.Color color, double size, double thickness, double gap, double opacity, bool dot, bool outline)
@@ -2103,6 +2184,14 @@ namespace GHOSTWing
                     var hudHelper = new WindowInteropHelper(_hud);
                     if (hudHelper.Handle != IntPtr.Zero)
                         SetWindowDisplayAffinity(hudHelper.Handle, affinity);
+                }
+
+                // Protect Stats Overlay window
+                if (statsOverlayWindow != null)
+                {
+                    var statsHelper = new WindowInteropHelper(statsOverlayWindow);
+                    if (statsHelper.Handle != IntPtr.Zero)
+                        SetWindowDisplayAffinity(statsHelper.Handle, affinity);
                 }
             }
             catch { }

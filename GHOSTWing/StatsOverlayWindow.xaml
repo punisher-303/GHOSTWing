@@ -1,0 +1,21 @@
+<Window x:Class="GHOSTWing.StatsOverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GHOSTWing Stats Overlay" Height="200" Width="400" 
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Topmost="True" ShowInTaskbar="False" IsHitTestVisible="False">
+    <Grid x:Name="MainGrid">
+        <StackPanel x:Name="StatsPanel" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0">
+            <TextBlock x:Name="txtVerticalPull" Text="VP: 0.00" Foreground="Red" FontSize="12" FontWeight="Black">
+                <TextBlock.Effect>
+                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
+                </TextBlock.Effect>
+            </TextBlock>
+            <TextBlock x:Name="txtDelay" Text="DL: 0ms" Foreground="Red" FontSize="12" FontWeight="Black" Margin="0,2,0,0">
+                <TextBlock.Effect>
+                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
+                </TextBlock.Effect>
+            </TextBlock>
+        </StackPanel>
+    </Grid>
+</Window>
