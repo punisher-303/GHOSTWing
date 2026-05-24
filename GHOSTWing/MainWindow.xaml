@@ -1197,6 +1197,14 @@
                                                 </StackPanel>
                                             </GroupBox>
 
+                                            <GroupBox Header="OVERLAY RENDERING" Style="{StaticResource CardGroupBox}">
+                                                <StackPanel>
+                                                    <TextBlock Text="Select how your overlays are drawn over games. Game Bar bypasses exclusive fullscreen." Foreground="#71717A" FontSize="10" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                                    <RadioButton Name="rbOverlayDesktop" Content="Desktop Overlay (Standard)" GroupName="OverlayMode" Foreground="#FAFAFA" Margin="0,0,0,8" Checked="SettingChanged_Click"/>
+                                                    <RadioButton Name="rbOverlayGameBar" Content="Game Bar Plugin (Beta)" GroupName="OverlayMode" Foreground="#10B981" FontWeight="Bold" Checked="SettingChanged_Click"/>
+                                                </StackPanel>
+                                            </GroupBox>
+
                                             <GroupBox Header="MAINTENANCE" Style="{StaticResource CardGroupBox}">
                                                 <StackPanel>
                                                     <Button Name="btnOpenLogs" Content="📂 Open App Data Folder" Height="35" Click="btnOpenFolder_Click" Margin="0,0,0,8" Background="#1C1C1F" BorderBrush="#27272A"/>

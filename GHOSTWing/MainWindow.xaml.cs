@@ -10,6 +10,7 @@ using System.Windows.Interop;
 using System.Text.Json;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Pipes;
 using Microsoft.Win32;
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
 using System.Windows.Shapes;
@@ -58,6 +59,14 @@ namespace GHOSTWing
 
         private StatsOverlayWindow? statsOverlayWindow;
         private CrosshairWindow? crosshairWindow;
+
+        // IPC Server for Game Bar Plugin
+        private Thread? _ipcThread;
+        private bool _ipcRunning = false;
+        private NamedPipeServerStream? _ipcServer;
+        private object _ipcLock = new object();
+        private string _lastIpcMessage = "";
+        private bool _ipcDirty = false;
 
         // ADS Hide feature
         private bool _isInitializing = true;
@@ -264,6 +273,9 @@ namespace GHOSTWing
                 chkMinimizeToTray.IsChecked = settingsManager.Settings.MinimizeToTray;
                 chkStartMinimized.IsChecked = settingsManager.Settings.StartMinimized;
 
+                if (settingsManager.Settings.UseGameBarOverlay) rbOverlayGameBar.IsChecked = true;
+                else rbOverlayDesktop.IsChecked = true;
+
 
                 sliderOpacity.Value = settingsManager.Settings.AppOpacity;
                 this.Opacity = settingsManager.Settings.AppOpacity;
@@ -339,6 +351,8 @@ namespace GHOSTWing
                 _cachedHorizontal = (float)sliderHorizontal.Value;
                 _cachedDelay = (int)sliderDelay.Value;
 
+                StartIPCServer();
+                
                 _ = CheckForUpdates();
 
                 // 8. Membership & Entitlements
@@ -1405,7 +1419,9 @@ namespace GHOSTWing
         {
             var s = settingsManager.Settings;
             bool crosshairEnabled = btnCrosshairEnable.IsChecked == true;
-            if (crosshairEnabled)
+            BroadcastOverlayData();
+            
+            if (crosshairEnabled && !s.UseGameBarOverlay)
             {
                 EnsureCrosshairWindow();
                 crosshairWindow?.Show();
@@ -1551,12 +1567,20 @@ namespace GHOSTWing
             if (_isInitializing || settingsManager == null) return;
             var s = settingsManager.Settings;
 
+            if (rbOverlayDesktop != null && rbOverlayGameBar != null)
+            {
+                s.UseGameBarOverlay = rbOverlayGameBar.IsChecked == true;
+            }
+
             if (chkStatsOverlayEnabled != null)
             {
                 s.StatsOverlayEnabled = chkStatsOverlayEnabled.IsChecked == true;
                 s.StatsOverlayColorIndex = comboStatsOverlayColor.SelectedIndex;
                 UpdateStatsOverlayWindow();
             }
+            
+            UpdateOverlays();
+            BroadcastOverlayData();
 
             settingsManager.Save();
         }
@@ -1586,7 +1610,9 @@ namespace GHOSTWing
         private void UpdateStatsOverlayWindow()
         {
             var s = settingsManager.Settings;
-            if (s.StatsOverlayEnabled)
+            BroadcastOverlayData();
+            
+            if (s.StatsOverlayEnabled && !s.UseGameBarOverlay)
             {
                 if (statsOverlayWindow == null)
                 {
@@ -2197,7 +2223,104 @@ namespace GHOSTWing
             catch { }
         }
 
+        private void StartIPCServer()
+        {
+            _ipcRunning = true;
+            _ipcThread = new Thread(() =>
+            {
+                while (_ipcRunning)
+                {
+                    try
+                    {
+                        if (_ipcServer == null)
+                        {
+                            _ipcServer = new NamedPipeServerStream("GHOSTWingOverlayPipe", PipeDirection.Out, 1, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
+                        }
 
+                        if (!_ipcServer.IsConnected)
+                        {
+                            _ipcServer.WaitForConnection();
+                        }
+
+                        while (_ipcServer.IsConnected && _ipcRunning)
+                        {
+                            bool send = false;
+                            string msg = "";
+                            lock (_ipcLock)
+                            {
+                                if (_ipcDirty)
+                                {
+                                    msg = _lastIpcMessage;
+                                    _ipcDirty = false;
+                                    send = true;
+                                }
+                            }
+                            
+                            if (send && !string.IsNullOrEmpty(msg))
+                            {
+                                byte[] buffer = System.Text.Encoding.UTF8.GetBytes(msg + "\n");
+                                _ipcServer.Write(buffer, 0, buffer.Length);
+                                _ipcServer.Flush();
+                            }
+                            else
+                            {
+                                Thread.Sleep(30);
+                            }
+                        }
+                    }
+                    catch (IOException)
+                    {
+                        if (_ipcServer != null)
+                        {
+                            _ipcServer.Dispose();
+                            _ipcServer = null;
+                        }
+                    }
+                    catch (Exception)
+                    {
+                        Thread.Sleep(1000);
+                    }
+                }
+            }) { IsBackground = true };
+            _ipcThread.Start();
+        }
+
+        private void BroadcastOverlayData()
+        {
+            if (settingsManager == null) return;
+            var s = settingsManager.Settings;
+            
+            var payload = new Dictionary<string, object>
+            {
+                ["VerticalPull"] = _cachedVertical,
+                ["CycleDelay"] = _cachedDelay,
+                ["UseGameBarOverlay"] = s.UseGameBarOverlay,
+                ["StatsEnabled"] = s.StatsOverlayEnabled,
+                ["StatsColorIndex"] = s.StatsOverlayColorIndex,
+                ["StatsSize"] = s.StatsOverlaySize,
+                ["StatsX"] = s.StatsOverlayX,
+                ["StatsY"] = s.StatsOverlayY,
+                ["CrosshairEnabled"] = s.CrosshairEnabled,
+                ["CrosshairShapeIndex"] = s.CrosshairShapeIndex,
+                ["CrosshairColorIndex"] = s.CrosshairColorIndex,
+                ["CrosshairSize"] = s.CrosshairSize,
+                ["CrosshairThickness"] = s.CrosshairThickness,
+                ["CrosshairGap"] = s.CrosshairGap,
+                ["CrosshairOpacity"] = s.CrosshairOpacity,
+                ["CrosshairDot"] = s.CrosshairDot,
+                ["CrosshairOutline"] = s.CrosshairOutline
+            };
+
+            string json = JsonSerializer.Serialize(payload);
+            lock (_ipcLock)
+            {
+                if (_lastIpcMessage != json)
+                {
+                    _lastIpcMessage = json;
+                    _ipcDirty = true;
+                }
+            }
+        }
     }
 
     public class RecoilPreset
