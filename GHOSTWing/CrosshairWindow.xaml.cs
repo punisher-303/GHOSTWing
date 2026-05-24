@@ -126,5 +126,20 @@ namespace GHOSTWing
             };
             CrosshairCanvas.Children.Add(line);
         }
+
+        public void UpdateFovCircle(bool enabled, double size)
+        {
+            if (FovCircle == null) return;
+            
+            if (!enabled || size <= 0)
+            {
+                FovCircle.Visibility = Visibility.Hidden;
+                return;
+            }
+
+            FovCircle.Width = size;
+            FovCircle.Height = size;
+            FovCircle.Visibility = Visibility.Visible;
+        }
     }
 }

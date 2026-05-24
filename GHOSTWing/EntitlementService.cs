@@ -49,7 +49,7 @@ namespace GHOSTWing
 
         private readonly Dictionary<string, bool> MasterTabs = new Dictionary<string, bool>
         {
-            { "Recoil", true }, { "Crosshair", true }, { "Intelligence", false }, { "Settings", true }, { "Account", true }
+            { "Recoil", true }, { "Crosshair", true }, { "Intelligence", false }, { "Settings", true }, { "Account", true }, { "NeuralVision", false }, { "NeuroEsp", false }, { "PrecisionCalibration", true }
         };
 
         private readonly Dictionary<string, bool> MasterFeatures = new Dictionary<string, bool>
@@ -59,10 +59,26 @@ namespace GHOSTWing
             { "JitterEngine", true }, 
             { "TacticalPeek", true },
             { "AutoPause", false },
+            { "VehicleIntel", true },
+            { "NeuralVision", false },
             { "CrosshairActive", true },
             { "StartWithWindows", true },
             { "MinimizeToTray", true },
-            { "StartMinimized", true }
+            { "StartMinimized", true },
+            { "NeuroEsp", false },
+            { "PrecisionCalibration", false }
+        };
+
+        private readonly Dictionary<string, bool> MasterMaintenance = new Dictionary<string, bool>
+        {
+            { "Intelligence", false },
+            { "JitterEngine", false },
+            { "TacticalPeek", false },
+            { "NeuralVision", false },
+            { "Recoil", false },
+            { "Crosshair", false },
+            { "NeuroEsp", false },
+            { "PrecisionCalibration", true } // true = Tab exists
         };
 
         public async Task<UserEntitlements> FetchEntitlements(string uuid)
@@ -87,9 +103,26 @@ namespace GHOSTWing
 
                 var userData = users[0];
                 var ent = MapBaseInfo(userData);
-                bool isVip = ent.IsVip;
-                bool useCustomAccess = userData.TryGetValue("access", out var acc) && acc?.ToString()?.ToLower() == "true";
 
+                // 1. Hardened Expiry Check: If expired, force to FREE (Plan 1)
+                if (ent.ExpiryDate.HasValue && ent.ExpiryDate.Value < DateTime.UtcNow)
+                {
+                    ent.PlanId = 1;
+                    ent.IsVip = false;
+                }
+
+                // 2. VIP Master Switch: If IsVip is false, user is FREE (Plan 1) - NO EXCEPTIONS
+                if (!ent.IsVip) 
+                {
+                    ent.PlanId = 1;
+                }
+                else if (ent.PlanId < 2)
+                {
+                    // If IsVip is true but plan is still Free, promote to at least Gold
+                    ent.PlanId = 2; 
+                }
+
+                bool useCustomAccess = userData.TryGetValue("access", out var acc) && acc?.ToString()?.ToLower() == "true";
                 await SyncMissingKeys("user_access", userData, $"uuid=eq.{uuid}");
 
                 if (useCustomAccess)
@@ -98,10 +131,15 @@ namespace GHOSTWing
                 }
                 else
                 {
-                    await FetchAndSyncGlobalTable("free_config");
-                    await FetchAndSyncGlobalTable("vip_config");
+                    // Select config table based on PlanId (1=FREE, 2=GOLD, 3=DIAMOND, 4=PRO/VIP)
+                    string table = ent.PlanId switch
+                    {
+                        1 => "free_config",
+                        2 => "gold_config",
+                        3 => "diamond_config",
+                        _ => "vip_config"
+                    };
 
-                    string table = isVip ? "vip_config" : "free_config";
                     var configResponse = await client.GetAsync($"{SupabaseUrl}/rest/v1/{table}?id=eq.1&select=*");
                     
                     if (configResponse.IsSuccessStatusCode)
@@ -111,18 +149,6 @@ namespace GHOSTWing
                         if (configs != null && configs.Count > 0)
                         {
                             var configData = configs[0];
-                            if (isVip && configData.TryGetValue("is_enabled", out var enabled) && enabled?.ToString()?.ToLower() == "false")
-                            {
-                                isVip = false;
-                                ent.IsVip = false;
-                                var freeRes = await client.GetAsync($"{SupabaseUrl}/rest/v1/free_config?id=eq.1&select=*");
-                                if (freeRes.IsSuccessStatusCode)
-                                {
-                                    var fJson = await freeRes.Content.ReadAsStringAsync();
-                                    var fConfigs = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(fJson);
-                                    if (fConfigs != null && fConfigs.Count > 0) configData = fConfigs[0];
-                                }
-                            }
                             ApplyPermissions(ent, configData);
                         }
                     }
@@ -222,6 +248,7 @@ namespace GHOSTWing
             {
                 var dbTabs = ParseJsonB(currentData, "tabs");
                 var dbFeatures = ParseJsonB(currentData, "features");
+                var dbMaint = ParseJsonB(currentData, "maintenance");
                 bool needsUpdate = false;
 
                 foreach (var master in MasterTabs)
@@ -232,21 +259,25 @@ namespace GHOSTWing
                 {
                     if (!dbFeatures.ContainsKey(master.Key)) { dbFeatures[master.Key] = master.Value; needsUpdate = true; }
                 }
+                foreach (var master in MasterMaintenance)
+                {
+                    if (!dbMaint.ContainsKey(master.Key)) { dbMaint[master.Key] = master.Value; needsUpdate = true; }
+                }
 
                 if (needsUpdate)
                 {
                     object update;
                     if (table == "user_access")
-                        update = new { tabs = dbTabs, features = dbFeatures, last_seen = DateTime.Now };
+                        update = new { tabs = dbTabs, features = dbFeatures, maintenance = dbMaint, last_seen = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") };
                     else
-                        update = new { tabs = dbTabs, features = dbFeatures };
+                        update = new { tabs = dbTabs, features = dbFeatures, maintenance = dbMaint };
 
                     await client.PatchAsync($"{SupabaseUrl}/rest/v1/{table}?{filter}", 
                         new StringContent(JsonSerializer.Serialize(update), Encoding.UTF8, "application/json"));
                 }
                 else if (table == "user_access")
                 {
-                    var lastSeen = new { last_seen = DateTime.Now };
+                    var lastSeen = new { last_seen = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ") };
                     await client.PatchAsync($"{SupabaseUrl}/rest/v1/user_access?{filter}", 
                         new StringContent(JsonSerializer.Serialize(lastSeen), Encoding.UTF8, "application/json"));
                 }
@@ -309,13 +340,15 @@ namespace GHOSTWing
             {
                 uuid = uuid,
                 username = "GHOST GUEST",
+                plan_id = 1,
                 is_vip = false,
-                purchase_date = DateTime.Now,
-                expiry_date = DateTime.Now.AddDays(1),
+                purchase_date = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                expiry_date = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-ddTHH:mm:ssZ"),
                 tabs = MasterTabs,
                 features = MasterFeatures,
+                maintenance = MasterMaintenance,
                 access = false,
-                last_seen = DateTime.Now
+                last_seen = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
             };
             await client.PostAsync($"{SupabaseUrl}/rest/v1/user_access", 
                 new StringContent(JsonSerializer.Serialize(newUser), Encoding.UTF8, "application/json"));

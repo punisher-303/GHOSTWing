@@ -53,6 +53,37 @@ namespace GHOSTWing
         public int PeekShowMs { get; set; } = 350;
         public int PeekHideMs { get; set; } = 400;
         public bool VehicleIntelligenceEnabled { get; set; } = true;
+
+        // Neural Vision AI
+        public bool VisionEnabled { get; set; } = false;
+        public double VisionConfidence { get; set; } = 0.5;
+        public int VisionFov { get; set; } = 400; // Accurate sweet spot
+        public double VisionSmoothness { get; set; } = 0.2; // Water-Flow standard
+        public int VisionTarget { get; set; } = 1; // 0 = Body, 1 = Head
+        public bool ShowVisionFov { get; set; } = false; // User toggle only
+        public int VisionActivationMode { get; set; } = 0; // 0 = ADS, 1 = FIRE
+
+        // --- Neuro ESP System ---
+        public bool EspEnabled { get; set; } = false;
+        public bool EspModeSkeleton { get; set; } = true; // true = Skeleton, false = Box
+        public string EspColor { get; set; } = "#FF0000";
+        public double EspConfidence { get; set; } = 0.4;
+        public double EspSize { get; set; } = 1.0;
+        public int EspXOffset { get; set; } = 0;
+        public int EspYOffset { get; set; } = 0;
+
+        // --- Precision Calibration System ---
+        public bool CalibEnabled { get; set; } = true;
+        public double CalibStepSize { get; set; } = 0.05;
+        public string CalibUpKey { get; set; } = "";
+        public string CalibDownKey { get; set; } = "";
+        public string StanceCrouchKey { get; set; } = "LControl";
+        public string StanceSprintKey { get; set; } = "LShift";
+        public double CrouchMultiplier { get; set; } = 0.8;
+        public string AttachmentToggleKey { get; set; } = "";
+        public bool IsAttachmentActive { get; set; } = false;
+        public double GlobalRecoilMultiplier { get; set; } = 1.0;
+        public bool ShowCalibNotifications { get; set; } = true;
     }
 
     public class SettingsManager
