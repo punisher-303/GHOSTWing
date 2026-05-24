@@ -1,0 +1,10 @@
+<Directives xmlns="http://schemas.microsoft.com/netfx/2013/01/metadata">
+  <Application>
+    <!--
+      An Assembly element with Name="*Application*" applies to all assemblies in
+      the application package. The heuristics can be fully replaced or supplemented
+      by removing or modifying these elements.
+    -->
+    <Assembly Name="*Application*" Dynamic="Required All" />
+  </Application>
+</Directives>

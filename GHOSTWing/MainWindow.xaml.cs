@@ -67,6 +67,8 @@ namespace GHOSTWing
         private object _ipcLock = new object();
         private string _lastIpcMessage = "";
         private bool _ipcDirty = false;
+        private string _currentIpcToast = "";
+        private long _currentIpcToastId = 0;
 
         // ADS Hide feature
         private bool _isInitializing = true;
@@ -1781,6 +1783,10 @@ namespace GHOSTWing
                     txtNotificationIcon.Text = "ℹ";
                 }
                 
+                _currentIpcToast = message;
+                _currentIpcToastId = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                BroadcastOverlayData();
+                
                 var sb = (System.Windows.Media.Animation.Storyboard)this.Resources["ShowNotificationAnim"];
                 sb.Begin();
             });
@@ -1833,7 +1839,7 @@ namespace GHOSTWing
 
         private void ShowHUD(string message)
         {
-            if (!settingsManager.Settings.ShowOnScreenHUD) return;
+            if (settingsManager != null && !settingsManager.Settings.ShowCalibNotifications) return;
 
             if (!System.Windows.Application.Current.Dispatcher.CheckAccess())
             {
@@ -1841,11 +1847,23 @@ namespace GHOSTWing
                 return;
             }
 
+            if (settingsManager != null && settingsManager.Settings.UseGameBarOverlay)
+            {
+                _currentIpcToast = message;
+                _currentIpcToastId = DateTime.Now.Ticks;
+                BroadcastOverlayData();
+                return;
+            }
+
             if (_hud == null) 
             {
                 _hud = new HUDWindow();
-                UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
+                if (settingsManager != null)
+                {
+                    UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
+                }
             }
+
             _hud.ShowMessage(message);
         }
 
@@ -2234,7 +2252,11 @@ namespace GHOSTWing
                     {
                         if (_ipcServer == null)
                         {
-                            _ipcServer = new NamedPipeServerStream("GHOSTWingOverlayPipe", PipeDirection.Out, 1, PipeTransmissionMode.Message, PipeOptions.Asynchronous);
+                            var pipeSecurity = new System.IO.Pipes.PipeSecurity();
+                            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule(new System.Security.Principal.SecurityIdentifier(System.Security.Principal.WellKnownSidType.WorldSid, null), System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
+                            pipeSecurity.AddAccessRule(new System.IO.Pipes.PipeAccessRule(new System.Security.Principal.SecurityIdentifier("S-1-15-2-1"), System.IO.Pipes.PipeAccessRights.ReadWrite, System.Security.AccessControl.AccessControlType.Allow));
+                            
+                            _ipcServer = System.IO.Pipes.NamedPipeServerStreamAcl.Create("GHOSTWingOverlayPipe", PipeDirection.Out, 1, PipeTransmissionMode.Message, PipeOptions.Asynchronous, 4096, 4096, pipeSecurity);
                         }
 
                         if (!_ipcServer.IsConnected)
@@ -2308,10 +2330,12 @@ namespace GHOSTWing
                 ["CrosshairGap"] = s.CrosshairGap,
                 ["CrosshairOpacity"] = s.CrosshairOpacity,
                 ["CrosshairDot"] = s.CrosshairDot,
-                ["CrosshairOutline"] = s.CrosshairOutline
+                ["CrosshairOutline"] = s.CrosshairOutline,
+                ["ToastMessage"] = _currentIpcToast,
+                ["ToastId"] = _currentIpcToastId
             };
 
-            string json = JsonSerializer.Serialize(payload);
+            string json = JsonSerializer.Serialize(payload) + "\n";
             lock (_ipcLock)
             {
                 if (_lastIpcMessage != json)

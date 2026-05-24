@@ -1,0 +1,49 @@
+<Page
+    x:Class="GHOSTWing.GameBarPlugin.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="Transparent">
+
+    <Grid IsHitTestVisible="False">
+        <!-- STATS OVERLAY -->
+        <Border x:Name="StatsContainer" 
+                Visibility="Collapsed" 
+                HorizontalAlignment="Left" 
+                VerticalAlignment="Top" 
+                Padding="6,4" 
+                CornerRadius="6" 
+                Background="#20000000" 
+                BorderThickness="1" 
+                BorderBrush="#30FFFFFF">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="VP: " Foreground="#71717A" FontSize="11" FontWeight="Bold"/>
+                <TextBlock x:Name="txtVP" Text="1.25" Foreground="Lime" FontSize="11" FontWeight="Black" Margin="0,0,10,0"/>
+                
+                <TextBlock Text="DL: " Foreground="#71717A" FontSize="11" FontWeight="Bold"/>
+                <TextBlock x:Name="txtDL" Text="5ms" Foreground="Lime" FontSize="11" FontWeight="Black"/>
+            </StackPanel>
+        </Border>
+
+        <!-- CROSSHAIR OVERLAY -->
+        <Canvas x:Name="CrosshairCanvas" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+            <!-- Dynamically populated by code-behind -->
+        </Canvas>
+
+        <!-- TOAST NOTIFICATION -->
+        <Border x:Name="ToastContainer"
+                Visibility="Collapsed"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom"
+                Margin="0,0,0,50"
+                Padding="15,8"
+                CornerRadius="8"
+                Background="#D0000000"
+                BorderThickness="1"
+                BorderBrush="#10B981">
+            <TextBlock x:Name="txtToast" Text="Notification" Foreground="#FAFAFA" FontSize="14" FontWeight="Bold" />
+        </Border>
+    </Grid>
+</Page>
