@@ -54,7 +54,6 @@ namespace GHOSTWing
         // Cached slider values to avoid expensive Dispatcher.Invoke in background thread
         private double _cachedVertical = 0;
         private double _cachedHorizontal = 0;
-        private double _cachedJitter = 0.8;
         private int _cachedDelay = 5;
 
         private CrosshairWindow? crosshairWindow;
@@ -67,23 +66,13 @@ namespace GHOSTWing
         private const int VK_RBUTTON = 0x02;
 
         // Jitter State
-        private bool _jitterDirection = false;
-        private int _firingMs = 0;
-        private double _internalAiStrength = 3.0; // Dynamic Auto-Leveler
+
 
         // Entitlements
         private EntitlementService entitlementService = new EntitlementService();
         private UserEntitlements? currentEntitlements;
 
-        // Tactical Peek State
-        private Thread? _peekThread;
-        private bool _peekRunning = false;
-        private bool _isPeekToggled = false;
-        private ESPWindow? _espWindow;
-        private bool _isAiTracking = false;
-        private DateTime _lastVisionTime = DateTime.Now;
-        private System.Drawing.Point _lastTargetDelta = new System.Drawing.Point(0, 0);
-        private System.Drawing.PointF _targetVelocity = new System.Drawing.PointF(0, 0);
+
         private bool isCursorVisible = true;
         // Movement Dispatcher (Unifies Recoil + Vision inputs)
         private double _pendingMoveX = 0;
@@ -135,10 +124,7 @@ namespace GHOSTWing
         const uint WDA_NONE = 0x00000000;
         const uint WDA_EXCLUDEFROMCAPTURE = 0x00000011;
 
-        private VisionEngine? _visionEngine;
-        private Thread? _visionThread;
-        private bool _visionActive = true;
-        
+
         public MainWindow()
         {
             string debugPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "GHOSTWing", "startup_debug.txt");
@@ -175,13 +161,8 @@ namespace GHOSTWing
             sliderVertical.ValueChanged += (s, e) => _cachedVertical = sliderVertical.Value;
             sliderHorizontal.ValueChanged += (s, e) => _cachedHorizontal = sliderHorizontal.Value;
             sliderDelay.ValueChanged += (s, e) => _cachedDelay = (int)sliderDelay.Value;
-            sliderJitter.ValueChanged += (s, e) => _cachedJitter = sliderJitter.Value;
-            sliderPeekShow.ValueChanged += SliderPeek_ValueChanged;
-            sliderPeekHide.ValueChanged += SliderPeek_ValueChanged;
 
-            _peekRunning = true;
-            _peekThread = new Thread(PeekLoop) { IsBackground = true };
-            _peekThread.Start();
+
 
             _movementRunning = true;
             _movementThread = new Thread(MovementDispatcherLoop) { IsBackground = true, Priority = ThreadPriority.Highest };
@@ -191,9 +172,6 @@ namespace GHOSTWing
             _stateThread = new Thread(StateWatchLoop) { IsBackground = true };
             _stateThread.Start();
 
-            _espWindow = new ESPWindow();
-            _espWindow.Show();
-            UpdateEspVisibility();
 
             Loaded += MainWindow_Loaded;
             Closing += MainWindow_Closing;
@@ -276,31 +254,7 @@ namespace GHOSTWing
                 chkRunOnStartup.IsChecked = settingsManager.Settings.RunOnStartup;
                 chkMinimizeToTray.IsChecked = settingsManager.Settings.MinimizeToTray;
                 chkStartMinimized.IsChecked = settingsManager.Settings.StartMinimized;
-                chkAutoPause.IsChecked = settingsManager.Settings.AutoPauseInMenus;
-                chkAiRecoil.IsChecked = settingsManager.Settings.AdaptiveRecoilEnabled;
-                chkVehicleIntelligence.IsChecked = settingsManager.Settings.VehicleIntelligenceEnabled;
-                
-                // 3. Restore Main Settings & UI State
-                var s = settingsManager.Settings;
-                chkAutoPause.IsChecked = s.AutoPauseInMenus;
-                sliderVisionConfidence.Value = settingsManager.Settings.VisionConfidence;
-                sliderVisionFov.Value = settingsManager.Settings.VisionFov;
-                txtVisionConfidence.Text = $"CONFIDENCE: {settingsManager.Settings.VisionConfidence:F2}";
-                txtVisionFov.Text = $"VISION FOV: {settingsManager.Settings.VisionFov}px";
-                
-                if (settingsManager.Settings.VisionTarget == 1) rbTargetHead.IsChecked = true;
-                else rbTargetBody.IsChecked = true;
-                
-                string modelPath = System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "GHOST_Intelligence", "GHOST_Vision.onnx");
-                _visionEngine = new VisionEngine(modelPath);
-                if (_visionEngine.IsLoaded)
-                {
-                    txtVisionStatus.Text = "• ENGINE: ACTIVE";
-                    txtVisionStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(16, 185, 129));
-                }
-                
-                _visionThread = new Thread(VisionLoop) { IsBackground = true, Priority = ThreadPriority.AboveNormal };
-                _visionThread.Start();
+
 
                 sliderOpacity.Value = settingsManager.Settings.AppOpacity;
                 this.Opacity = settingsManager.Settings.AppOpacity;
@@ -309,39 +263,7 @@ namespace GHOSTWing
                 btnStreamerMode.IsChecked = settingsManager.Settings.IsStreamerMode;
                 UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
 
-                // Tactical Peek UI Restore
-                chkPeekEnabled.IsChecked = s.PeekEnabled;
-                chkPeekAutoFire.IsChecked = s.PeekAutoFire;
-                rbPeekHold.IsChecked = s.PeekModeHold;
-                rbPeekToggle.IsChecked = !s.PeekModeHold;
-                btnPeekActivation.Text = s.PeekActivationKey;
-                btnGameCrouchKey.Text = s.GameCrouchKey;
-                sliderPeekShow.Value = s.PeekShowMs;
-                sliderPeekHide.Value = s.PeekHideMs;
-                txtPeekShowMs.Text = s.PeekShowMs.ToString();
-                txtPeekHideMs.Text = s.PeekHideMs.ToString();
-
-                // Restore Activation Mode
-                if (s.VisionActivationMode == 0) rbVisionAds.IsChecked = true;
-                else if (s.VisionActivationMode == 1) rbVisionFire.IsChecked = true;
-                else if (s.VisionActivationMode == 2) rbVisionBoth.IsChecked = true;
-
-                // --- Neuro ESP UI Restore ---
-                chkEspEnabled.IsChecked = s.EspEnabled;
-                sliderEspConfidence.Value = s.EspConfidence;
-                txtEspConfidence.Text = $"ESP CONFIDENCE: {s.EspConfidence:F2}";
-                rbEspSkeleton.IsChecked = s.EspModeSkeleton;
-                rbEspBox.IsChecked = !s.EspModeSkeleton;
-                sliderEspSize.Value = s.EspSize;
-                sliderEspXOffset.Value = s.EspXOffset;
-                sliderEspYOffset.Value = s.EspYOffset;
-                if (cmbEspColor != null)
-                {
-                    foreach (ComboBoxItem item in cmbEspColor.Items)
-                    {
-                        if (item.Tag?.ToString() == s.EspColor) item.IsSelected = true;
-                    }
-                }
+                var s = settingsManager.Settings;
                 if (s.ActivationMode == "LeftOnly")
                 {
                     rbModeLeftOnly.IsChecked = true;
@@ -353,7 +275,7 @@ namespace GHOSTWing
                     currentActivationMode = ActivationMode.RightAndLeft;
                 }
 
-                UpdateJitterStatusUI(false);
+
 
                 // 4. Restore Last Selected Preset
                 RefreshPresetHotkeys();
@@ -454,7 +376,7 @@ namespace GHOSTWing
             if (sliderGlobalMult != null) sliderGlobalMult.Value = s.GlobalRecoilMultiplier;
             if (chkAttachActive != null) chkAttachActive.IsChecked = s.IsAttachmentActive;
             if (chkCalibNotifications != null) chkCalibNotifications.IsChecked = s.ShowCalibNotifications;
-            if (chkCalibEnabled != null) chkCalibEnabled.IsChecked = false; // Safety: Always start disabled
+            if (chkCalibEnabled != null) chkCalibEnabled.IsChecked = true; // Default to enabled per user request
 
             UpdateHotkeyButtonText(btnCalibCrouchKey, s.StanceCrouchKey);
             UpdateHotkeyButtonText(btnCalibSprintKey, s.StanceSprintKey);
@@ -754,15 +676,7 @@ namespace GHOSTWing
                     return;
                 }
 
-                // Check for Peek Toggle
-                if (!string.IsNullOrEmpty(settingsManager.Settings.PeekActivationKey) && shortcut == settingsManager.Settings.PeekActivationKey)
-                {
-                    if (!settingsManager.Settings.PeekModeHold)
-                    {
-                        _isPeekToggled = !_isPeekToggled;
-                        ShowHUD(_isPeekToggled ? "PEEK: ON" : "PEEK: OFF");
-                    }
-                }
+
 
 
                 // Check for Preset shortcut
@@ -786,12 +700,12 @@ namespace GHOSTWing
 
                 if (shortcut == s_cal.CalibUpKey)
                 {
-                    sliderVertical.Value = Math.Min(sliderVertical.Maximum, sliderVertical.Value + s_cal.CalibStepSize);
+                    sliderVertical.Value = Math.Round(Math.Min(sliderVertical.Maximum, sliderVertical.Value + s_cal.CalibStepSize), 2);
                     ShowCalibrationFeedback("Vertical", sliderVertical.Value);
                 }
                 else if (shortcut == s_cal.CalibDownKey)
                 {
-                    sliderVertical.Value = Math.Max(sliderVertical.Minimum, sliderVertical.Value - s_cal.CalibStepSize);
+                    sliderVertical.Value = Math.Round(Math.Max(sliderVertical.Minimum, sliderVertical.Value - s_cal.CalibStepSize), 2);
                     ShowCalibrationFeedback("Vertical", sliderVertical.Value);
                 }
                 else if (shortcut == s_cal.AttachmentToggleKey)
@@ -876,16 +790,7 @@ namespace GHOSTWing
                 settingsManager.Settings.ToggleShortcut = shortcut;
                 txtToggleShortcut.Text = shortcut;
             }
-            else if (listeningFor == "Peek")
-            {
-                settingsManager.Settings.PeekActivationKey = shortcut;
-                btnPeekActivation.Text = shortcut;
-            }
-            else if (listeningFor == "Crouch")
-            {
-                settingsManager.Settings.GameCrouchKey = shortcut;
-                btnGameCrouchKey.Text = shortcut;
-            }
+
             else if (listeningFor == "StanceCrouchKey")
             {
                 settingsManager.Settings.StanceCrouchKey = shortcut;
@@ -987,17 +892,7 @@ namespace GHOSTWing
             txtToggleShortcut.Text = "PRESS ANY KEY...";
         }
 
-        private void btnSetPeekKey_Click(object sender, RoutedEventArgs e)
-        {
-            listeningFor = "Peek";
-            btnPeekActivation.Text = "WAITING...";
-        }
 
-        private void btnSetCrouchKey_Click(object sender, RoutedEventArgs e)
-        {
-            listeningFor = "Crouch";
-            btnGameCrouchKey.Text = "WAITING...";
-        }
 
         private void btnRecordKey_Click(object sender, RoutedEventArgs e)
         {
@@ -1038,7 +933,7 @@ namespace GHOSTWing
                 btnRecoilStatus.IsChecked = true;
                 txtEngineStatus.Text = "RUNNING";
                 txtEngineStatus.Foreground = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#1DB954"));
-                UpdateJitterStatusUI(true);
+
                 ShowHUD("RECOIL ENGINE: ON");
             }
         }
@@ -1049,21 +944,11 @@ namespace GHOSTWing
             btnRecoilStatus.IsChecked = false;
             txtEngineStatus.Text = "STOPPED";
             txtEngineStatus.Foreground = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString("#D32F2F"));
-            UpdateJitterStatusUI(false);
+
             ShowHUD("RECOIL ENGINE: OFF");
         }
 
-        private void UpdateJitterStatusUI(bool active)
-        {
-            if (borderJitterStatus == null) return;
-            var colorStr = active ? "#10B981" : "#F43F5E";
-            var brush = new SolidColorBrush((System.Windows.Media.Color)System.Windows.Media.ColorConverter.ConvertFromString(colorStr));
-            
-            borderJitterStatus.BorderBrush = brush;
-            txtJitterTitle.Foreground = brush;
-            txtJitterStatus.Foreground = brush;
-            txtJitterStatus.Text = active ? "ACTIVE" : "OFFLINE";
-        }
+
 
         private void rbModeRightLeft_Checked(object sender, RoutedEventArgs e)
         {
@@ -1291,12 +1176,7 @@ namespace GHOSTWing
             }
 
             // 2. Feature Locking (Keep these specific as they link to different control types)
-            UpdateFeatureLock("TacticalPeek", chkPeekEnabled, badgeVipPeek);
-            UpdateFeatureLock("JitterEngine", chkAiRecoil, badgeVipJitter);
-            UpdateFeatureLock("AutoPause", chkAutoPause, null);
-            UpdateFeatureLock("VehicleIntel", chkVehicleIntelligence, null);
-            UpdateFeatureLock("NeuralVision", chkVisionEnabled, badgeVipNeural);
-            UpdateFeatureLock("NeuroEsp", chkEspEnabled, badgeVipEsp);
+
             UpdateFeatureLock("EngineStatus", btnRecoilStatus, badgeVipEngine);
             UpdateFeatureLock("StreamerMode", btnStreamerMode, badgeVipStreamer);
             UpdateFeatureLock("CrosshairActive", btnCrosshairEnable, badgeVipCrossActive);
@@ -1390,7 +1270,6 @@ namespace GHOSTWing
 
         private void sliderCrouchMult_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (txtCrouchMult != null) txtCrouchMult.Text = e.NewValue.ToString("F2") + "x";
             if (settingsManager != null)
             {
                 settingsManager.Settings.CrouchMultiplier = e.NewValue;
@@ -1400,7 +1279,6 @@ namespace GHOSTWing
 
         private void sliderCalibStep_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (txtCalibStep != null) txtCalibStep.Text = e.NewValue.ToString("F2");
             if (settingsManager != null)
             {
                 settingsManager.Settings.CalibStepSize = e.NewValue;
@@ -1410,7 +1288,6 @@ namespace GHOSTWing
 
         private void sliderGlobalMult_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (txtGlobalMult != null) txtGlobalMult.Text = e.NewValue.ToString("F2") + "x";
             if (settingsManager != null)
             {
                 settingsManager.Settings.GlobalRecoilMultiplier = e.NewValue;
@@ -1445,26 +1322,7 @@ namespace GHOSTWing
             }
         }
 
-        private void sliderJitter_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (txtJitterValue != null)
-                txtJitterValue.Text = e.NewValue.ToString("F1");
-            if (settingsManager != null) settingsManager.Settings.JitterStrength = e.NewValue;
-        }
 
-        private void SliderPeek_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (txtPeekShowMs != null && sender == sliderPeekShow)
-            {
-                txtPeekShowMs.Text = ((int)e.NewValue).ToString();
-                if (settingsManager != null) settingsManager.Settings.PeekShowMs = (int)e.NewValue;
-            }
-            if (txtPeekHideMs != null && sender == sliderPeekHide)
-            {
-                txtPeekHideMs.Text = ((int)e.NewValue).ToString();
-                if (settingsManager != null) settingsManager.Settings.PeekHideMs = (int)e.NewValue;
-            }
-        }
 
         private void UpdateFeatureLock(string key, System.Windows.Controls.Primitives.ToggleButton? toggle, Border? badge)
         {
@@ -1523,27 +1381,11 @@ namespace GHOSTWing
         {
             var s = settingsManager.Settings;
             bool crosshairEnabled = btnCrosshairEnable.IsChecked == true;
-            // FOV only enabled if Neural Vision is ON AND the FOV toggle is ON
-            bool fovEnabled = s.VisionEnabled && s.ShowVisionFov;
-
-            if (crosshairEnabled || fovEnabled)
+            if (crosshairEnabled)
             {
                 EnsureCrosshairWindow();
                 crosshairWindow?.Show();
-                
-                // Update Crosshair Part
-                if (crosshairEnabled)
-                {
-                    UpdateCrosshairOverlay();
-                }
-                else
-                {
-                    // Hide crosshair elements but keep FOV
-                    crosshairWindow?.UpdateCrosshair("None", Colors.Transparent, 0, 0, 0, 0, false, false);
-                }
-
-                // Update FOV Part
-                crosshairWindow?.UpdateFovCircle(fovEnabled, s.VisionFov);
+                UpdateCrosshairOverlay();
             }
             else
             {
@@ -1639,11 +1481,7 @@ namespace GHOSTWing
                 );
             }
             
-            if (settingsManager != null)
-            {
-                var s = settingsManager.Settings;
-                crosshairWindow?.UpdateFovCircle(s.ShowVisionFov, s.VisionFov);
-            }
+
         }
 
         private System.Windows.Media.Color GetSelectedCrosshairColor()
@@ -1689,98 +1527,6 @@ namespace GHOSTWing
             if (_isInitializing || settingsManager == null) return;
             var s = settingsManager.Settings;
 
-            if (sender == chkAutoPause) s.AutoPauseInMenus = chkAutoPause.IsChecked == true;
-            if (sender == chkAiRecoil) s.AdaptiveRecoilEnabled = chkAiRecoil.IsChecked == true;
-            if (sender == chkVehicleIntelligence) s.VehicleIntelligenceEnabled = chkVehicleIntelligence.IsChecked == true;
-            if (sender == chkPeekEnabled) s.PeekEnabled = chkPeekEnabled.IsChecked == true;
-            if (sender == chkPeekAutoFire) s.PeekAutoFire = chkPeekAutoFire.IsChecked == true;
-            if (sender == rbPeekHold) s.PeekModeHold = true;
-            if (sender == rbPeekToggle) s.PeekModeHold = false;
-
-            // ESP Toggles
-            if (sender == chkEspEnabled) 
-            {
-                s.EspEnabled = chkEspEnabled.IsChecked == true;
-                UpdateEspVisibility();
-            }
-            if (sender == rbEspSkeleton) s.EspModeSkeleton = true;
-            if (sender == rbEspBox) s.EspModeSkeleton = false;
-            if (sender == chkVisionEnabled)
-            {
-                s.VisionEnabled = chkVisionEnabled.IsChecked == true;
-                UpdateOverlays();
-            }
-            if (sender == chkShowVisionFov)
-            {
-                s.ShowVisionFov = chkShowVisionFov.IsChecked == true;
-                UpdateOverlays();
-            }
-            if (sender == rbTargetHead) s.VisionTarget = 1;
-            if (sender == rbTargetBody) s.VisionTarget = 0;
-            if (sender == rbVisionAds) s.VisionActivationMode = 0;
-            if (sender == rbVisionFire) s.VisionActivationMode = 1;
-            if (sender == rbVisionBoth) s.VisionActivationMode = 2;
-            
-            if (sender == sliderJitter)
-            {
-                s.JitterStrength = sliderJitter.Value;
-                if (txtJitterValue != null) txtJitterValue.Text = sliderJitter.Value.ToString("F1");
-            }
-            if (sender == sliderPeekShow)
-            {
-                s.PeekShowMs = (int)sliderPeekShow.Value;
-                if (txtPeekShowMs != null) txtPeekShowMs.Text = $"SHOW: {s.PeekShowMs}ms";
-            }
-            if (sender == sliderPeekHide)
-            {
-                s.PeekHideMs = (int)sliderPeekHide.Value;
-                if (txtPeekHideMs != null) txtPeekHideMs.Text = $"HIDE: {s.PeekHideMs}ms";
-            }
-
-            // ESP Sliders
-            if (sender == sliderEspSize)
-            {
-                s.EspSize = sliderEspSize.Value;
-                if (txtEspSize != null) txtEspSize.Text = $"ESP SCALE: {s.EspSize:F1}x";
-            }
-            if (sender == sliderEspXOffset) s.EspXOffset = (int)sliderEspXOffset.Value;
-            if (sender == sliderEspYOffset) s.EspYOffset = (int)sliderEspYOffset.Value;
-
-
-            settingsManager.Save();
-        }
-
-        private void EspConfidence_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (settingsManager == null) return;
-            var s = settingsManager.Settings;
-            s.EspConfidence = sliderEspConfidence.Value;
-            if (txtEspConfidence != null) txtEspConfidence.Text = $"ESP CONFIDENCE: {s.EspConfidence:F2}";
-        }
-
-        private void VisionSetting_Changed(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (_isInitializing || settingsManager == null) return;
-            var s = settingsManager.Settings;
-
-            if (sender == sliderVisionConfidence)
-            {
-                s.VisionConfidence = sliderVisionConfidence.Value;
-                if (txtVisionConfidence != null) txtVisionConfidence.Text = $"CONFIDENCE: {s.VisionConfidence:F2}";
-            }
-            if (sender == sliderVisionFov)
-            {
-                s.VisionFov = (int)sliderVisionFov.Value;
-                if (txtVisionFov != null) txtVisionFov.Text = $"VISION FOV: {s.VisionFov}px";
-                
-                // Force immediate update of the overlay circle
-                UpdateOverlays();
-            }
-            if (sender == sliderVisionSmoothness)
-            {
-                s.VisionSmoothness = sliderVisionSmoothness.Value;
-                if (txtVisionSmoothness != null) txtVisionSmoothness.Text = $"SMOOTHNESS: {s.VisionSmoothness:F2}";
-            }
 
             settingsManager.Save();
         }
@@ -2026,99 +1772,6 @@ namespace GHOSTWing
                     // Only activate if buttons are pressed AND mouse cursor is hidden (in-game)
                     if (shouldActivate && !isCursorVisible)
                     {
-                        if (settingsManager.Settings.AdaptiveRecoilEnabled)
-                        {
-                            // --- UNIVERSAL JITTER ENGINE (GOD MODE) ---
-                            var s = settingsManager.Settings;
-                            
-                            // 1. High-Frequency Vertical Jitter (1000Hz)
-                            double jitterVal = _jitterDirection ? _cachedJitter : -_cachedJitter;
-                            _jitterDirection = !_jitterDirection;
-
-                            // 2. Track Firing Duration
-                            if (shouldActivate) _firingMs += 1;
-                            else _firingMs = 0;
-
-                            var physical = GlobalInputHook.GetAndResetPhysicalDeltas();
-                            double userSpeed = Math.Sqrt(physical.X * physical.X + physical.Y * physical.Y);
-
-                            // 3. Sensitivity-Aware Aim Filter (DPI Normalized)
-                            double transparency = 1.0;
-                            double threshold = 5.0 * (s.MouseDpi / 800.0); // Adjust sensitivity threshold by DPI
-                            if (userSpeed > threshold)
-                            {
-                                transparency = Math.Max(0, 1.0 - (userSpeed - threshold) / (threshold * 2.0));
-                            }
-
-                            // 4. FULL ADAPTIVE INTELLIGENCE (V2.0 Velocity Tracking)
-                            // Calculates exact pull-down requirement based on user intent vs weapon climb
-                            double vertFactor = 1.0 / Math.Max(0.1, s.GameVerticalSens);
-                            double adsFactor = 50.0 / Math.Max(1.0, s.GameADSSens);
-                            double normalization = vertFactor * adsFactor;
-
-                            // Rapid Response: Adjust strength 100x faster if user is fighting recoil
-                            if (physical.Y > 0.5) _internalAiStrength += 0.15 * normalization; // Fast boost
-                            else if (physical.Y > 0.1) _internalAiStrength += 0.02 * normalization; // Steady climb
-                            else if (physical.Y < -0.3) _internalAiStrength = Math.Max(1.0, _internalAiStrength - 0.1); // Quick release
-
-                            // 5. Dynamic Stability Pull
-                            double basePull = ((_internalAiStrength * 0.022) + 0.05) * normalization;
-                            
-                            // 6. Tracking Awareness / Vehicle Intel: Reduce jitter during horizontal swipes for smoother tracking/steering
-                            double jitterMod = 1.0;
-                            if (s.VehicleIntelligenceEnabled)
-                            {
-                                double horizontalMotion = Math.Abs(physical.X);
-                                jitterMod = Math.Max(0.2, 1.0 - (horizontalMotion / 5.0));
-                            }
-                            
-                            // AI Assist Suppression
-                            double finalVerticalPull = basePull;
-                            if (_isAiTracking) finalVerticalPull *= 0.15; 
-
-                            // --- CALIBRATION OVERRIDE ---
-                            if (s.CalibEnabled)
-                            {
-                                finalVerticalPull *= s.GlobalRecoilMultiplier;
-                                if (IsHotkeyDown(s.StanceCrouchKey)) finalVerticalPull *= s.CrouchMultiplier;
-                            }
-
-                            accumulatedY += (jitterVal * jitterMod + finalVerticalPull) * transparency;
-
-                            // 7. Micro-Stabilization & Intent Support
-                            if (physical.Y > 0.1)
-                            {
-                                double boost = (physical.Y * 1.35 - physical.Y) * transparency;
-                                accumulatedY += boost; 
-                            }
-                            else if (physical.Y < -0.5)
-                            {
-                                accumulatedY = 0; // Emergency Safety Release
-                                _internalAiStrength = Math.Max(1.0, _internalAiStrength - 0.5);
-                            }
-
-                            // 7. Horizontal Micro-Stabilization
-                            accumulatedX += (physical.X * 0.05) * transparency;
-
-                            int moveX = (int)accumulatedX;
-                            int moveY = (int)accumulatedY;
-                            accumulatedX -= moveX;
-                            accumulatedY -= moveY;
-
-                            if (moveX != 0 || moveY != 0)
-                            {
-                                INPUT input = new INPUT();
-                                input.type = INPUT_MOUSE;
-                                input.mi.dx = moveX;
-                                input.mi.dy = moveY;
-                                input.mi.dwFlags = MOUSEEVENTF_MOVE;
-                                SendInput(1, new INPUT[] { input }, Marshal.SizeOf(typeof(INPUT)));
-                            }
-
-                            // Force 1ms precision for the Jitter Engine
-                            targetDelay = 1;
-                        }
-                        else
                         {
                             // --- MANUAL RECOIL CONFIGURATION ---
                             var s = settingsManager.Settings;
@@ -2382,76 +2035,19 @@ namespace GHOSTWing
             {
                 try
                 {
-                    if (settingsManager?.Settings != null && settingsManager.Settings.AutoPauseInMenus)
-                    {
                         CURSORINFO ci = new CURSORINFO();
                         ci.cbSize = Marshal.SizeOf(ci);
                         if (GetCursorInfo(out ci))
                         {
                             this.isCursorVisible = (ci.flags == 0x00000001); // 0x1 = CURSOR_SHOWING
                         }
-                    }
-                    else
-                    {
-                        this.isCursorVisible = false; // Assume in-game if disabled
-                    }
                 }
                 catch { }
                 Thread.Sleep(100); // 10Hz is enough for menu detection
             }
         }
 
-        private void PeekLoop()
-        {
-            while (_peekRunning)
-            {
-                try
-                {
-                    var s = settingsManager.Settings;
-                    bool active = false;
 
-                    if (s.PeekEnabled && isCursorVisible == false)
-                    {
-                        if (s.PeekModeHold)
-                        {
-                            // Detect if the activation key is physically held
-                            Key key = (Key)Enum.Parse(typeof(Key), s.PeekActivationKey);
-                            int vk = KeyInterop.VirtualKeyFromKey(key);
-                            active = (GetAsyncKeyState(vk) & 0x8000) != 0;
-                        }
-                        else
-                        {
-                            active = _isPeekToggled;
-                        }
-
-                        if (active)
-                        {
-                            // 1. STAND UP (Release Crouch Key)
-                            SimulateKey(s.GameCrouchKey, false); 
-                            
-                            // 2. FIRE (If linked)
-                            if (s.PeekAutoFire)
-                                SimulateMouse(VK_LBUTTON, true); // Press
-                            
-                            Thread.Sleep(s.PeekShowMs);
-                            
-                            // 3. STOP FIRE
-                            if (s.PeekAutoFire)
-                                SimulateMouse(VK_LBUTTON, false); // Release
-                                
-                            // 4. CROUCH DOWN (Press Crouch Key)
-                            SimulateKey(s.GameCrouchKey, true); // true = Press
-                            
-                            Thread.Sleep(s.PeekHideMs);
-                            continue; // Skip the rest of the loop
-                        }
-                    }
-                    
-                    Thread.Sleep(50);
-                }
-                catch { Thread.Sleep(100); }
-            }
-        }
 
         private void SimulateKey(string keyName, bool down)
         {
@@ -2512,139 +2108,7 @@ namespace GHOSTWing
             catch { }
         }
 
-        private void UpdateEspVisibility()
-        {
-            if (_espWindow == null) return;
-            var s = settingsManager?.Settings;
-            if (s == null) return;
 
-            if (s.EspEnabled) _espWindow.Visibility = Visibility.Visible;
-            else _espWindow.Visibility = Visibility.Collapsed;
-
-            // Streamer Mode Integration
-            IntPtr hwnd = new WindowInteropHelper(_espWindow).Handle;
-            uint affinity = s.IsStreamerMode ? (uint)0x00000011 : (uint)0x00000000;
-            SetWindowDisplayAffinity(hwnd, affinity);
-        }
-
-        private void cmbEspColor_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (settingsManager == null || cmbEspColor == null) return;
-            if (cmbEspColor.SelectedItem is ComboBoxItem item)
-            {
-                settingsManager.Settings.EspColor = item.Tag?.ToString() ?? "#FF0000";
-            }
-        }
-
-        private void VisionLoop()
-        {
-            while (_visionActive)
-            {
-                try
-                {
-                    var s = settingsManager?.Settings;
-                    if (s != null && s.VisionEnabled && _visionEngine != null && _visionEngine.IsLoaded)
-                    {
-                        bool isAds = (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0;
-                        bool isFire = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
-                        
-                        bool isActive = false;
-                        if (s.VisionActivationMode == 0) isActive = isAds;
-                        else if (s.VisionActivationMode == 1) isActive = isFire;
-                        else if (s.VisionActivationMode == 2) isActive = isAds && isFire;
-                        
-                        if (s != null && (s.VisionEnabled || s.EspEnabled))
-                        {
-                            var allTargets = _visionEngine.GetAllTargets(s.VisionFov, (float)s.EspConfidence);
-                            
-                            // 1. Update ESP Overlay
-                            Dispatcher.Invoke(() => {
-                                if (_espWindow != null && s != null) _espWindow.UpdateESP(allTargets, s);
-                            });
-
-                            // 2. Process Aimbot if Active
-                            if (s.VisionEnabled && isActive && allTargets.Count > 0)
-                            {
-                                // Pick best target (Closest to center)
-                                VisionEngine.TargetInfo info = allTargets[0];
-                                float bestScore = float.MaxValue;
-                                foreach(var t in allTargets)
-                                {
-                                    float d2 = t.Delta.X * t.Delta.X + t.Delta.Y * t.Delta.Y;
-                                    if(d2 < bestScore) { bestScore = d2; info = t; }
-                                }
-
-                                // Enforce Circle FOV: Only lock if inside the circular radius
-                                double dist = Math.Sqrt(info.Delta.X * info.Delta.X + info.Delta.Y * info.Delta.Y);
-                                if (dist <= s.VisionFov / 2.0)
-                                {
-                                    _isAiTracking = true;
-                                    
-                                    // Neuro v2: Professional PID & Smoothing Loop
-                                    // 1. Calculate time delta for precision math
-                                    var now = DateTime.Now;
-                                    double dt = (now - _lastVisionTime).TotalSeconds;
-                                    if (dt <= 0 || dt > 0.1) dt = 0.016; // Default to 60fps if jumpy
-                                    _lastVisionTime = now;
-
-                                    // 2. Compute PID Glide
-                                    var move = _visionEngine.GetSmoothMove(info, dt, s.VisionSmoothness);
-                                    
-                                    // 3. Dispatch Movement
-                                    MoveCursorRelative(move.X, move.Y);
-                                    
-                                    _lastTargetDelta = info.Delta;
-
-                                    // --- Neuro v3: Precision Auto-Fire (Triggerbot) ---
-                                    // If we are centered on target (within a 4px tolerance), pull the trigger
-                                    bool isLockedOn = Math.Abs(info.Delta.X) < 4 && Math.Abs(info.Delta.Y) < 4;
-                                    if (isLockedOn && !isFire)
-                                    {
-                                        INPUT[] clickDown = new INPUT[1];
-                                        clickDown[0].type = INPUT_MOUSE;
-                                        clickDown[0].mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-                                        SendInput(1, clickDown, Marshal.SizeOf(typeof(INPUT)));
-                                    }
-                                }
-                                else
-                                {
-                                    _isAiTracking = false;
-                                    _visionEngine.ResetTracking();
-                                }
-                            }
-                            else
-                            {
-                                _isAiTracking = false;
-                                _visionEngine.ResetTracking();
-                                _lastTargetDelta = new System.Drawing.Point(0, 0);
-                                _targetVelocity = new System.Drawing.PointF(0, 0);
-                            }
-                        }
-                        else
-                        {
-                            _isAiTracking = false;
-                            _visionEngine.ResetTracking();
-                            // Clear ESP if active but no targets
-                            Dispatcher.Invoke(() => {
-                                if (_espWindow != null && s != null) _espWindow.UpdateESP(new List<VisionEngine.TargetInfo>(), s);
-                            });
-                        }
-                    }
-                    else
-                    {
-                        _isAiTracking = false;
-                        _visionEngine?.ResetTracking();
-                        // Ensure ESP is cleared if disabled
-                        Dispatcher.Invoke(() => {
-                            if (_espWindow != null && s != null) _espWindow.UpdateESP(new List<VisionEngine.TargetInfo>(), s);
-                        });
-                    }
-                    
-                    Thread.Sleep(10); 
-                }
-                catch { _isAiTracking = false; Thread.Sleep(100); }
-            }
-        }
     }
 
     public class RecoilPreset

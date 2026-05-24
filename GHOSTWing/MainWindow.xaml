@@ -638,7 +638,7 @@
                                                         </Grid.ColumnDefinitions>
                                                         <Label Grid.Column="0" Content="Vertical Pull:" Foreground="#71717A" FontSize="11.5"/>
                                                         <Slider Grid.Column="1" Name="sliderVertical" Minimum="0" Maximum="50" TickFrequency="0.01" SmallChange="0.01" LargeChange="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
-                                                        <TextBox Grid.Column="2" Text="{Binding ElementName=sliderVertical, Path=Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F3}" HorizontalContentAlignment="Center" FontWeight="Bold"/>
+                                                        <TextBox Grid.Column="2" Text="{Binding ElementName=sliderVertical, Path=Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Center" FontWeight="Bold"/>
                                                     </Grid>
                                                     <!-- Horizontal -->
                                                     <Grid Margin="0,4,0,8">
@@ -649,7 +649,7 @@
                                                         </Grid.ColumnDefinitions>
                                                         <Label Grid.Column="0" Content="Horizontal:" Foreground="#71717A" FontSize="11.5"/>
                                                         <Slider Grid.Column="1" Name="sliderHorizontal" Minimum="-50" Maximum="50" TickFrequency="0.01" SmallChange="0.01" LargeChange="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
-                                                        <TextBox Grid.Column="2" Text="{Binding ElementName=sliderHorizontal, Path=Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F3}" HorizontalContentAlignment="Center" FontWeight="Bold"/>
+                                                        <TextBox Grid.Column="2" Text="{Binding ElementName=sliderHorizontal, Path=Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Center" FontWeight="Bold"/>
                                                     </Grid>
                                                     <!-- Sleep Delay -->
                                                     <Grid Margin="0,4,0,12">
@@ -659,7 +659,7 @@
                                                             <ColumnDefinition Width="85"/>
                                                         </Grid.ColumnDefinitions>
                                                         <Label Grid.Column="0" Content="Cycle Delay:" Foreground="#71717A" FontSize="11.5"/>
-                                                        <Slider Grid.Column="1" Name="sliderDelay" Minimum="5" Maximum="50" Value="5" TickFrequency="1" SmallChange="1" LargeChange="5" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
+                                                        <Slider Grid.Column="1" Name="sliderDelay" Minimum="1" Maximum="50" Value="5" TickFrequency="1" SmallChange="1" LargeChange="5" IsSnapToTickEnabled="True" VerticalAlignment="Center"/>
                                                         <TextBox Grid.Column="2" Text="{Binding ElementName=sliderDelay, Path=Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" HorizontalContentAlignment="Center" FontWeight="Bold"/>
                                                     </Grid>
                                                     <Border Background="#05FFFFFF" CornerRadius="8" Padding="12">
@@ -1006,266 +1006,7 @@
                         <!-- Page 2: Engine & Intelligence -->
                         <TabItem>
                             <Grid>
-                                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                    <Grid Margin="15">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
- 
-                                        <!-- COLUMN 1: SMART DETECTION & NEURAL VISION -->
-                                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
-                                            <!-- SMART DETECTION BOX -->
-                                            <Border Background="#05FFFFFF" CornerRadius="12" Padding="15" BorderBrush="#222" BorderThickness="1" Margin="0,0,0,15">
-                                                <StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                                        <Border Background="#10B981" Width="3" Height="15" CornerRadius="1" Margin="0,0,10,0"/>
-                                                        <TextBlock Text="SMART DETECTION" Foreground="#FAFAFA" FontSize="14" FontWeight="Black"/>
-                                                    </StackPanel>
- 
-                                                    <TextBlock Text="DYNAMIC AUTO-PAUSE" Foreground="#FAFAFA" FontSize="12" FontWeight="Black"/>
-                                                    <TextBlock Text="Automatically pauses all logic when Tab or Esc menus are open." Foreground="#71717A" FontSize="10.5" Margin="0,4,0,10" TextWrapping="Wrap" LineHeight="14"/>
-                                                    <Grid Margin="0,0,0,20">
-                                                        <TextBlock Text="ENABLE SYSTEM AUTO-PAUSE" Foreground="#E4E4E7" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                        <ToggleButton Name="chkAutoPause" Style="{StaticResource StreamerToggleStyle}" HorizontalAlignment="Right" Click="SettingChanged_Click"/>
-                                                    </Grid>
- 
-                                                    <TextBlock Text="UNIVERSAL JITTER" Foreground="#FAFAFA" FontSize="12" FontWeight="Black"/>
-                                                    <TextBlock Text="Advanced micro-movement stabilization for precise recoil normalization." Foreground="#71717A" FontSize="10.5" Margin="0,4,0,10" TextWrapping="Wrap" LineHeight="14"/>
-                                                    <Grid Margin="0,0,0,12">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="ENABLE NEURAL JITTER" Foreground="#E4E4E7" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                            <Border Name="badgeVipJitter" Background="#10B981" Margin="10,0,0,0" Padding="6,2" CornerRadius="4" Visibility="Collapsed" VerticalAlignment="Center">
-                                                                <TextBlock Text="VIP ONLY" Foreground="Black" FontSize="9" FontWeight="Black"/>
-                                                            </Border>
-                                                        </StackPanel>
-                                                        <ToggleButton Name="chkAiRecoil" Style="{StaticResource StreamerToggleStyle}" HorizontalAlignment="Right" Click="SettingChanged_Click"/>
-                                                    </Grid>
-                                                    <Grid Margin="0,0,0,10">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <Slider Name="sliderJitter" Minimum="0" Maximum="10" Value="2" TickFrequency="0.1" IsSnapToTickEnabled="True" ValueChanged="SettingChanged_Click"/>
-                                                        <TextBlock Grid.Column="1" Name="txtJitterValue" Text="2.0" Foreground="#10B981" FontWeight="Bold" Margin="8,0,0,0" VerticalAlignment="Center"/>
-                                                    </Grid>
- 
-                                                    <TextBlock Text="VEHICLE INTELLIGENCE" Foreground="#FAFAFA" FontSize="12" FontWeight="Black"/>
-                                                    <TextBlock Text="Reduces jitter intensity while driving for smooth steering control." Foreground="#71717A" FontSize="10.5" Margin="0,4,0,10" TextWrapping="Wrap" LineHeight="14"/>
-                                                    <Grid Margin="0,0,0,25">
-                                                        <TextBlock Text="ENABLE VEHICLE INTEL" Foreground="#E4E4E7" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                                                        <ToggleButton Name="chkVehicleIntelligence" Style="{StaticResource StreamerToggleStyle}" HorizontalAlignment="Right" IsChecked="True" Click="SettingChanged_Click"/>
-                                                    </Grid>
- 
-                                                    <Border Name="borderJitterStatus" Background="#05FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#222" BorderThickness="1">
-                                                        <StackPanel>
-                                                            <TextBlock Name="txtJitterTitle" Text="JITTER STATUS" Foreground="#10B981" FontSize="10" FontWeight="Black" Margin="0,0,0,8"/>
-                                                            <TextBlock Name="txtJitterStatus" Text="• ENGINE: STANDBY" Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
-                                                            <TextBlock Text="• SYNC: ACTIVE" Foreground="#888888" FontSize="10.5"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </StackPanel>
-                                            </Border>
- 
-                                            <!-- NEURAL VISION AI BOX -->
-                                            <Border Background="#05FFFFFF" CornerRadius="12" Padding="15" BorderBrush="#222" BorderThickness="1">
-                                                <StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                                        <Border Background="#10B981" Width="3" Height="15" CornerRadius="1" Margin="0,0,10,0"/>
-                                                        <TextBlock Text="NEURAL VISION AI" Foreground="#FAFAFA" FontSize="14" FontWeight="Black"/>
-                                                        <Border Name="badgeVipNeural" Background="#10B981" Margin="10,0,0,0" Padding="6,2" CornerRadius="4" Visibility="Collapsed" VerticalAlignment="Center">
-                                                            <TextBlock Text="DIAMOND ONLY" Foreground="Black" FontSize="9" FontWeight="Black"/>
-                                                        </Border>
-                                                    </StackPanel>
- 
-                                                    <Grid Margin="0,0,0,20">
-                                                        <TextBlock Text="ENABLE NEURAL ASSIST" Foreground="#FAFAFA" FontSize="12" FontWeight="Black" VerticalAlignment="Center"/>
-                                                        <ToggleButton Name="chkVisionEnabled" Style="{StaticResource StreamerToggleStyle}" HorizontalAlignment="Right" Click="SettingChanged_Click"/>
-                                                    </Grid>
-                                                     
-                                                    <TextBlock Text="CONFIDENCE: 0.50" Name="txtVisionConfidence" Foreground="#A1A1AA" FontSize="10.5" Margin="0,0,0,4"/>
-                                                    <Slider Name="sliderVisionConfidence" Minimum="0.1" Maximum="0.9" Value="0.5" TickFrequency="0.05" IsSnapToTickEnabled="True" Margin="0,0,0,15" ValueChanged="VisionSetting_Changed"/>
- 
-                                                    <TextBlock Text="VISION FOV: 150px" Name="txtVisionFov" Foreground="#A1A1AA" FontSize="10.5" Margin="0,0,0,4"/>
-                                                    <Slider Name="sliderVisionFov" Minimum="50" Maximum="400" Value="150" TickFrequency="10" IsSnapToTickEnabled="True" Margin="0,0,0,15" ValueChanged="VisionSetting_Changed"/>
-                                                      
-                                                    <Grid Margin="0,0,0,18">
-                                                        <TextBlock Text="SHOW FOV OVERLAY" Foreground="#71717A" FontSize="10.5" VerticalAlignment="Center"/>
-                                                        <ToggleButton Name="chkShowVisionFov" Style="{StaticResource StreamerToggleStyle}" HorizontalAlignment="Right" Click="SettingChanged_Click"/>
-                                                    </Grid>
- 
-                                                    <TextBlock Text="SMOOTHNESS: 0.20" Name="txtVisionSmoothness" Foreground="#A1A1AA" FontSize="10.5" Margin="0,0,0,4"/>
-                                                    <Slider Name="sliderVisionSmoothness" Minimum="0.01" Maximum="1.0" Value="0.2" TickFrequency="0.01" IsSnapToTickEnabled="True" Margin="0,0,0,12" ValueChanged="VisionSetting_Changed"/>
- 
-                                                    <TextBlock Text="TARGET PRIORITY" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                                        <RadioButton Name="rbTargetHead" Content="HEAD" Foreground="#888888" FontSize="11" IsChecked="True" Click="SettingChanged_Click" FontWeight="SemiBold"/>
-                                                        <RadioButton Name="rbTargetBody" Content="BODY" Foreground="#888888" FontSize="11" Margin="20,0,0,0" Click="SettingChanged_Click" FontWeight="SemiBold"/>
-                                                    </StackPanel>
-                                                    <TextBlock Text="ACTIVATION TRIGGER" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,6"/>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-                                                        <RadioButton Name="rbVisionAds" Content="ADS (RMB)" IsChecked="True" Foreground="#888888" FontSize="11" Click="SettingChanged_Click" FontWeight="SemiBold"/>
-                                                        <RadioButton Name="rbVisionFire" Content="FIRE (LMB)" Foreground="#888888" FontSize="11" Margin="20,0,0,0" Click="SettingChanged_Click" FontWeight="SemiBold"/>
-                                                        <RadioButton Name="rbVisionBoth" Content="ADS + FIRE" Foreground="#888888" FontSize="11" Margin="20,0,0,0" Click="SettingChanged_Click" FontWeight="SemiBold"/>
-                                                    </StackPanel>
- 
-                                                    <Border Background="#05FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#222" BorderThickness="1">
-                                                        <StackPanel>
-                                                            <TextBlock Text="VISION STATUS" Foreground="#10B981" FontSize="10" FontWeight="Black" Margin="0,0,0,8"/>
-                                                            <TextBlock Name="txtVisionStatus" Text="• ENGINE: STANDBY" Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
-                                                            <TextBlock Name="txtGpuStatus" Text="• GPU: DIRECTML READY" Foreground="#888888" FontSize="10.5"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
- 
-                                        <!-- COLUMN 2: TACTICAL PEEK ENGINE -->
-                                        <StackPanel Grid.Column="1" Margin="10,0,10,0">
-                                            <Border Background="#05FFFFFF" CornerRadius="12" Padding="15" BorderBrush="#222" BorderThickness="1">
-                                                <StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                                        <Border Background="#10B981" Width="3" Height="15" CornerRadius="1" Margin="0,0,10,0"/>
-                                                        <TextBlock Text="TACTICAL PEEK" Foreground="#FAFAFA" FontSize="14" FontWeight="Black"/>
-                                                    </StackPanel>
- 
-                                                    <Grid Margin="0,0,0,22">
-                                                        <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Text="ENABLE PEEK ENGINE" Foreground="#FAFAFA" FontSize="12" FontWeight="Black" VerticalAlignment="Center"/>
-                                                            <Border Name="badgeVipPeek" Background="#10B981" Margin="10,0,0,0" Padding="6,2" CornerRadius="4" Visibility="Collapsed" VerticalAlignment="Center">
-                                                                <TextBlock Text="DIAMOND ONLY" Foreground="Black" FontSize="9" FontWeight="Black"/>
-                                                            </Border>
-                                                        </StackPanel>
-                                                        <ToggleButton Name="chkPeekEnabled" Style="{StaticResource StreamerToggleStyle}" HorizontalAlignment="Right" Click="SettingChanged_Click"/>
-                                                    </Grid>
- 
-                                                    <TextBlock Text="HOTKEY CONFIG" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                                    <Grid Margin="0,0,0,10">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <Border Background="#09090B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="4" Height="30">
-                                                            <TextBlock Name="btnPeekActivation" Text="E" Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
-                                                        </Border>
-                                                        <Button Grid.Column="1" Content="SET PEEK" Width="75" Height="30" Margin="8,0,0,0" Style="{StaticResource RecordButtonStyle}" Click="btnSetPeekKey_Click"/>
-                                                    </Grid>
- 
-                                                    <TextBlock Text="GAME CROUCH KEY" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                                    <Grid Margin="0,0,0,15">
-                                                        <Grid.ColumnDefinitions>
-                                                            <ColumnDefinition Width="*"/>
-                                                            <ColumnDefinition Width="Auto"/>
-                                                        </Grid.ColumnDefinitions>
-                                                        <Border Background="#09090B" BorderBrush="#27272A" BorderThickness="1" CornerRadius="4" Height="30">
-                                                            <TextBlock Name="btnGameCrouchKey" Text="C" Foreground="#FAFAFA" HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11"/>
-                                                        </Border>
-                                                        <Button Grid.Column="1" Content="SET KEY" Width="75" Height="30" Margin="8,0,0,0" Style="{StaticResource RecordButtonStyle}" Click="btnSetCrouchKey_Click"/>
-                                                    </Grid>
- 
-                                                    <TextBlock Text="TIMING SETTINGS" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
-                                                    <Grid Margin="0,0,0,8">
-                                                        <TextBlock Name="txtPeekShowMs" Text="SHOW: 150ms" Foreground="#888888" FontSize="10"/>
-                                                        <Slider Name="sliderPeekShow" Minimum="50" Maximum="1000" Value="150" TickFrequency="10" IsSnapToTickEnabled="True" ValueChanged="SettingChanged_Click" Margin="0,15,0,0"/>
-                                                    </Grid>
-                                                    <Grid Margin="0,0,0,15">
-                                                        <TextBlock Name="txtPeekHideMs" Text="HIDE: 250ms" Foreground="#888888" FontSize="10"/>
-                                                        <Slider Name="sliderPeekHide" Minimum="50" Maximum="1000" Value="250" TickFrequency="10" IsSnapToTickEnabled="True" ValueChanged="SettingChanged_Click" Margin="0,15,0,0"/>
-                                                    </Grid>
- 
-                                                    <TextBlock Text="BEHAVIOR" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                                    <Grid Margin="0,0,0,15">
-                                                        <TextBlock Text="LINK WITH AUTO-FIRE" Foreground="#71717A" FontSize="10.5" VerticalAlignment="Center"/>
-                                                        <ToggleButton Name="chkPeekAutoFire" Style="{StaticResource StreamerToggleStyle}" HorizontalAlignment="Right" Click="SettingChanged_Click"/>
-                                                    </Grid>
-                                                    <RadioButton Name="rbPeekHold" Content="Hold Mode" IsChecked="True" Foreground="#888888" FontSize="11" Click="SettingChanged_Click" Margin="0,0,0,4"/>
-                                                    <RadioButton Name="rbPeekToggle" Content="Toggle Mode" Foreground="#888888" FontSize="11" Click="SettingChanged_Click" Margin="0,0,0,15"/>
- 
-                                                    <Border Background="#05FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#222" BorderThickness="1">
-                                                        <StackPanel>
-                                                            <TextBlock Text="TACTICAL INSIGHTS" Foreground="#10B981" FontSize="10" FontWeight="Black" Margin="0,0,0,8"/>
-                                                            <TextBlock Text="• Auto-Crouch: Minimizes profile." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
-                                                            <TextBlock Text="• Fast-Recovery: Instant reset." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
-                                                            <TextBlock Text="• Multi-Tap: Perfect for DMRs." Foreground="#888888" FontSize="10.5"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
-
-                                        <!-- COLUMN 3: NEURO ESP OVERLAY -->
-                                        <StackPanel Grid.Column="2" Margin="10,0,0,0">
-                                            <Border Background="#05FFFFFF" CornerRadius="12" Padding="15" BorderBrush="#222" BorderThickness="1">
-                                                <StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                                        <Border Background="#10B981" Width="3" Height="15" CornerRadius="1" Margin="0,0,10,0"/>
-                                                        <TextBlock Text="NEURO ESP" Foreground="#FAFAFA" FontSize="14" FontWeight="Black"/>
-                                                        <Border Name="badgeVipEsp" Background="#10B981" Margin="10,0,0,0" Padding="6,2" CornerRadius="4" Visibility="Collapsed" VerticalAlignment="Center">
-                                                            <TextBlock Text="DIAMOND ONLY" Foreground="Black" FontSize="9" FontWeight="Black"/>
-                                                        </Border>
-                                                    </StackPanel>
-
-                                                    <Grid Margin="0,0,0,20">
-                                                        <TextBlock Text="ENABLE ESP OVERLAY" Foreground="#FAFAFA" FontSize="12" FontWeight="Black" VerticalAlignment="Center"/>
-                                                        <ToggleButton Name="chkEspEnabled" Style="{StaticResource StreamerToggleStyle}" HorizontalAlignment="Right" Click="SettingChanged_Click"/>
-                                                    </Grid>
-
-                                                    <TextBlock Text="ESP CONFIDENCE: 0.40" Name="txtEspConfidence" Foreground="#A1A1AA" FontSize="10.5" Margin="0,0,0,4"/>
-                                                    <Slider Name="sliderEspConfidence" Minimum="0.1" Maximum="0.9" Value="0.4" TickFrequency="0.05" IsSnapToTickEnabled="True" Margin="0,0,0,15" ValueChanged="EspConfidence_Changed"/>
-
-                                                    <TextBlock Text="VISUAL MODE" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                                    <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
-                                                        <RadioButton Name="rbEspSkeleton" Content="SKELETON" IsChecked="True" Foreground="#888888" FontSize="11" Click="SettingChanged_Click" FontWeight="SemiBold"/>
-                                                        <RadioButton Name="rbEspBox" Content="BOX" Foreground="#888888" FontSize="11" Margin="20,0,0,0" Click="SettingChanged_Click" FontWeight="SemiBold"/>
-                                                    </StackPanel>
-
-                                                    <TextBlock Text="ESP COLOR" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,8"/>
-                                                    <ComboBox Name="cmbEspColor" Height="30" Margin="0,0,0,15" Background="#09090B" BorderBrush="#27272A" SelectionChanged="cmbEspColor_SelectionChanged">
-                                                        <ComboBoxItem Content="PURE RED" Tag="#FF0000" IsSelected="True"/>
-                                                        <ComboBoxItem Content="CYAN NEON" Tag="#00FFFF"/>
-                                                        <ComboBoxItem Content="ELECTRIC LIME" Tag="#00FF00"/>
-                                                        <ComboBoxItem Content="MAGENTA" Tag="#FF00FF"/>
-                                                        <ComboBoxItem Content="GOLDEN" Tag="#FFD700"/>
-                                                    </ComboBox>
-
-                                                    <TextBlock Text="ESP SCALE: 1.0x" Name="txtEspSize" Foreground="#A1A1AA" FontSize="10.5" Margin="0,0,0,4"/>
-                                                    <Slider Name="sliderEspSize" Minimum="0.5" Maximum="2.0" Value="1.0" TickFrequency="0.1" IsSnapToTickEnabled="True" Margin="0,0,0,15" ValueChanged="SettingChanged_Click"/>
-
-                                                    <TextBlock Text="X ADJUSTMENT" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
-                                                    <Slider Name="sliderEspXOffset" Minimum="-50" Maximum="50" Value="0" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,0,0,10" ValueChanged="SettingChanged_Click"/>
-
-                                                    <TextBlock Text="Y ADJUSTMENT" Foreground="#FAFAFA" FontSize="11" FontWeight="Bold" Margin="0,0,0,4"/>
-                                                    <Slider Name="sliderEspYOffset" Minimum="-50" Maximum="50" Value="0" TickFrequency="1" IsSnapToTickEnabled="True" Margin="0,0,0,15" ValueChanged="SettingChanged_Click"/>
-
-                                                    <Border Background="#05FFFFFF" CornerRadius="8" Padding="12" BorderBrush="#222" BorderThickness="1">
-                                                        <StackPanel>
-                                                            <TextBlock Text="OVERLAY INSIGHTS" Foreground="#10B981" FontSize="10" FontWeight="Black" Margin="0,0,0,8"/>
-                                                            <TextBlock Text="• Streamer Mode: Safe hiding." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
-                                                            <TextBlock Text="• Bone Masking: Dynamic pose." Foreground="#888888" FontSize="10.5" Margin="0,0,0,4"/>
-                                                            <TextBlock Text="• Zero Lag: High-speed engine." Foreground="#888888" FontSize="10.5"/>
-                                                        </StackPanel>
-                                                    </Border>
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
-                                    </Grid>
-                                </ScrollViewer>
- 
-                                <!-- Premium Lock Screen Overlay -->
-                                <Border Name="overlayIntelligence" Background="#CC09090B" CornerRadius="12" Visibility="Collapsed">
-                                    <Grid>
-                                        <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                                            <Border Name="badgeTierLock" Background="#10B981" CornerRadius="4" Padding="8,4" HorizontalAlignment="Center" Margin="0,0,0,15">
-                                                <TextBlock Name="txtTierLock" Text="DIAMOND FEATURE" Foreground="Black" FontSize="10" FontWeight="Black"/>
-                                            </Border>
-                                            <TextBlock Text="🔒" FontSize="42" HorizontalAlignment="Center" Margin="0,0,0,10"/>
-                                            <TextBlock Name="txtLockTitle" Text="NEURAL INTELLIGENCE LOCKED" Foreground="#FAFAFA" FontSize="18" FontWeight="Black" HorizontalAlignment="Center"/>
-                                            <TextBlock Name="txtLockDesc" Text="Upgrade to Diamond to unlock full skeletal tracking and smart auto-pause." Foreground="#71717A" FontSize="11" HorizontalAlignment="Center" Margin="0,5,0,25" TextAlignment="Center"/>
-                                            <Button Content="UPGRADE TO UNLOCK" Width="220" Height="42" Background="#10B981" Foreground="Black" FontWeight="Black" Click="btnGoToCart_Click"/>
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
+                                <TextBlock Text="COMING SOON" Foreground="#71717A" FontSize="36" FontWeight="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                             </Grid>
                         </TabItem>
 
@@ -1286,7 +1027,7 @@
                                     
                                     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                                         <TextBlock Text="ENABLE CALIBRATION" Foreground="#FAFAFA" FontSize="11" FontWeight="Black" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                        <ToggleButton Name="chkCalibEnabled" Style="{StaticResource StreamerToggleStyle}" Checked="chkCalibEnabled_Changed" Unchecked="chkCalibEnabled_Changed"/>
+                                        <ToggleButton Name="chkCalibEnabled" Style="{StaticResource StreamerToggleStyle}" IsChecked="True" Checked="chkCalibEnabled_Changed" Unchecked="chkCalibEnabled_Changed"/>
                                     </StackPanel>
                                 </Grid>
 
@@ -1308,8 +1049,14 @@
                                                     <Button Name="btnCalibSprintKey" Content="Record Key" Height="30" Tag="StanceSprintKey" Click="btnRecordKey_Click"/>
 
                                                     <TextBlock Text="Crouch Multiplier" Foreground="#71717A" FontSize="10" Margin="0,15,0,5"/>
-                                                    <Slider Name="sliderCrouchMult" Minimum="0.1" Maximum="1.0" Value="0.8" SmallChange="0.01" ValueChanged="sliderCrouchMult_ValueChanged"/>
-                                                    <TextBlock Name="txtCrouchMult" Text="0.8x" Foreground="#10B981" FontSize="10" HorizontalAlignment="Right"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="50"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Slider Grid.Column="0" Name="sliderCrouchMult" Minimum="0.1" Maximum="1.0" Value="0.8" SmallChange="0.01" ValueChanged="sliderCrouchMult_ValueChanged"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ElementName=sliderCrouchMult, Path=Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Center" FontWeight="Bold" Margin="5,0,0,0" Height="25" Style="{StaticResource ModernTextBox}"/>
+                                                    </Grid>
                                                 </StackPanel>
                                             </GroupBox>
 
@@ -1330,23 +1077,35 @@
                                         <StackPanel Grid.Column="1" Margin="10,0,0,0">
                                             <GroupBox Header="DYNAMIC CALIBRATION" Style="{StaticResource CardGroupBox}">
                                                 <StackPanel>
-                                                    <TextBlock Text="Nudge Up Key" Foreground="#71717A" FontSize="10" Margin="0,0,0,5"/>
+                                                    <TextBlock Text="Vertical down increment" Foreground="#71717A" FontSize="10" Margin="0,0,0,5"/>
                                                     <Button Name="btnCalibUpKey" Content="Record Key" Height="30" Tag="CalibUpKey" Click="btnRecordKey_Click"/>
 
-                                                    <TextBlock Text="Nudge Down Key" Foreground="#71717A" FontSize="10" Margin="0,15,0,5"/>
+                                                    <TextBlock Text="Vertical up increment" Foreground="#71717A" FontSize="10" Margin="0,15,0,5"/>
                                                     <Button Name="btnCalibDownKey" Content="Record Key" Height="30" Tag="CalibDownKey" Click="btnRecordKey_Click"/>
 
                                                     <TextBlock Text="Step Increment" Foreground="#71717A" FontSize="10" Margin="0,15,0,5"/>
-                                                    <Slider Name="sliderCalibStep" Minimum="0.01" Maximum="0.5" Value="0.05" SmallChange="0.01" ValueChanged="sliderCalibStep_ValueChanged"/>
-                                                    <TextBlock Name="txtCalibStep" Text="0.05" Foreground="#10B981" FontSize="10" HorizontalAlignment="Right"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="50"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Slider Grid.Column="0" Name="sliderCalibStep" Minimum="0.01" Maximum="0.5" Value="0.05" SmallChange="0.01" ValueChanged="sliderCalibStep_ValueChanged"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ElementName=sliderCalibStep, Path=Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Center" FontWeight="Bold" Margin="5,0,0,0" Height="25" Style="{StaticResource ModernTextBox}"/>
+                                                    </Grid>
                                                 </StackPanel>
                                             </GroupBox>
 
                                             <GroupBox Header="MASTER SENSITIVITY" Style="{StaticResource CardGroupBox}">
                                                 <StackPanel>
                                                     <TextBlock Text="Global Multiplier" Foreground="#71717A" FontSize="10" Margin="0,0,0,5"/>
-                                                    <Slider Name="sliderGlobalMult" Minimum="0.5" Maximum="2.0" Value="1.0" SmallChange="0.01" ValueChanged="sliderGlobalMult_ValueChanged"/>
-                                                    <TextBlock Name="txtGlobalMult" Text="1.00x" Foreground="#10B981" FontSize="10" HorizontalAlignment="Right"/>
+                                                    <Grid>
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="50"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <Slider Grid.Column="0" Name="sliderGlobalMult" Minimum="0.5" Maximum="2.0" Value="1.0" SmallChange="0.01" ValueChanged="sliderGlobalMult_ValueChanged"/>
+                                                        <TextBox Grid.Column="1" Text="{Binding ElementName=sliderGlobalMult, Path=Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}" HorizontalContentAlignment="Center" FontWeight="Bold" Margin="5,0,0,0" Height="25" Style="{StaticResource ModernTextBox}"/>
+                                                    </Grid>
                                                     
                                                     <Border BorderBrush="#27272A" BorderThickness="0,1,0,0" Margin="0,15"/>
                                                     
