@@ -38,21 +38,15 @@ namespace GHOSTWing.GameBarPlugin
             {
                 _isRunning = true;
                 _ = ConnectAndListenToGHOSTWing();
-
-                try
+                
+                // Hide button when pinned, show when unpinned (Game Bar is open)
+                _widget.PinnedChanged += (s, args) =>
                 {
-                    // Automatically detect monitor size and expand widget to fill most of the screen
-                    var displayInfo = Windows.Graphics.Display.DisplayInformation.GetForCurrentView();
-                    double w = displayInfo.ScreenWidthInRawPixels - 100; // Leave a 50px buffer on edges
-                    double h = displayInfo.ScreenHeightInRawPixels - 100;
-                    
-                    if (w > 0 && h > 0)
+                    _ = Dispatcher.RunAsync(CoreDispatcherPriority.Normal, () =>
                     {
-                        await _widget.TryResizeWindowAsync(new Windows.Foundation.Size(w, h));
-                        await _widget.CenterWindowAsync();
-                    }
-                }
-                catch { }
+                        btnCenterFullscreen.Visibility = _widget.Pinned ? Visibility.Collapsed : Visibility.Visible;
+                    });
+                };
             }
         }
 
@@ -85,6 +79,26 @@ namespace GHOSTWing.GameBarPlugin
             }
         }
 
+        private async void btnCenterFullscreen_Click(object sender, RoutedEventArgs e)
+        {
+            if (_widget == null) return;
+            try
+            {
+                var displayInfo = Windows.Graphics.Display.DisplayInformation.GetForCurrentView();
+                
+                // Use a safe border (subtract 20px from width, 100px from height for title bar)
+                double w = displayInfo.ScreenWidthInRawPixels - 20; 
+                double h = displayInfo.ScreenHeightInRawPixels - 100;
+                
+                if (w > 0 && h > 0)
+                {
+                    await _widget.TryResizeWindowAsync(new Windows.Foundation.Size(w, h));
+                    await _widget.CenterWindowAsync();
+                }
+            }
+            catch { }
+        }
+
         private async void ProcessPayload(string json)
         {
             try
@@ -104,6 +118,24 @@ namespace GHOSTWing.GameBarPlugin
                                 StatsContainer.Visibility = Visibility.Visible;
                                 txtVP.Text = data.VerticalPull.ToString("0.00");
                                 txtDL.Text = data.CycleDelay.ToString() + "ms";
+                                
+                                // Color Map
+                                Color statColor = Colors.White;
+                                if (data.StatsColorIndex == 1) statColor = Colors.Red;
+                                if (data.StatsColorIndex == 2) statColor = Colors.Lime;
+                                if (data.StatsColorIndex == 3) statColor = Colors.DodgerBlue;
+                                if (data.StatsColorIndex == 4) statColor = Colors.Yellow;
+                                if (data.StatsColorIndex == 5) statColor = Colors.Cyan;
+                                if (data.StatsColorIndex == 6) statColor = Colors.Magenta;
+                                
+                                SolidColorBrush statBrush = new SolidColorBrush(statColor);
+                                txtVP.Foreground = statBrush;
+                                txtDL.Foreground = statBrush;
+                                
+                                // Size and Position
+                                txtVP.FontSize = data.StatsSize;
+                                txtDL.FontSize = data.StatsSize;
+                                StatsContainer.Margin = new Thickness(data.StatsX, data.StatsY, 0, 0);
                             }
                             else
                             {

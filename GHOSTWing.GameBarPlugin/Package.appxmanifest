@@ -54,10 +54,10 @@
               <GameBarWidget Type="Standard" AllowForegroundTransparency="true">
                 <Window>
                   <Size>
-                    <Height>800</Height>
+                    <Height>600</Height>
                     <Width>1000</Width>
-                    <MinHeight>300</MinHeight>
-                    <MinWidth>400</MinWidth>
+                    <MinHeight>200</MinHeight>
+                    <MinWidth>300</MinWidth>
                     <MaxHeight>4320</MaxHeight>
                     <MaxWidth>7680</MaxWidth>
                   </Size>

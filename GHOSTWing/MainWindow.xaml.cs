@@ -379,8 +379,11 @@ namespace GHOSTWing
             if (s.CrosshairEnabled)
             {
                 btnCrosshairEnable.IsChecked = true;
-                crosshairWindow = new CrosshairWindow();
-                crosshairWindow.Show();
+                if (!s.UseGameBarOverlay)
+                {
+                    crosshairWindow = new CrosshairWindow();
+                    crosshairWindow.Show();
+                }
                 
                 if (s.IsStreamerMode) UpdateStreamerMode(true);
             }
@@ -1403,6 +1406,7 @@ namespace GHOSTWing
 
         private void btnCrosshairEnable_Click(object sender, RoutedEventArgs e)
         {
+            SaveCrosshairSettings(); // Save FIRST so UpdateOverlays reads the correct state
             UpdateOverlays();
             
             if (btnCrosshairEnable.IsChecked == true)
@@ -1413,8 +1417,6 @@ namespace GHOSTWing
             {
                 StopAdsWatch();
             }
-            
-            SaveCrosshairSettings();
         }
 
         private void UpdateOverlays()
@@ -1450,6 +1452,8 @@ namespace GHOSTWing
                 StopAdsWatch();
         }
 
+        private bool _adsIsHidingCrosshair = false;
+
         private void StartAdsWatch()
         {
             if (_adsWatchRunning) return;
@@ -1463,15 +1467,23 @@ namespace GHOSTWing
                     if (rightHeld && !wasHidden)
                     {
                         wasHidden = true;
-                        Dispatcher.Invoke(() => crosshairWindow?.Hide());
+                        _adsIsHidingCrosshair = true;
+                        Dispatcher.Invoke(() => {
+                            crosshairWindow?.Hide();
+                            if (settingsManager != null && settingsManager.Settings.UseGameBarOverlay) BroadcastOverlayData();
+                        });
                     }
                     else if (!rightHeld && wasHidden)
                     {
                         wasHidden = false;
+                        _adsIsHidingCrosshair = false;
                         Dispatcher.Invoke(() =>
                         {
                             if (btnCrosshairEnable.IsChecked == true)
+                            {
                                 crosshairWindow?.Show();
+                                if (settingsManager != null && settingsManager.Settings.UseGameBarOverlay) BroadcastOverlayData();
+                            }
                         });
                     }
                     Thread.Sleep(8); // ~120Hz polling
@@ -2322,7 +2334,7 @@ namespace GHOSTWing
                 ["StatsSize"] = s.StatsOverlaySize,
                 ["StatsX"] = s.StatsOverlayX,
                 ["StatsY"] = s.StatsOverlayY,
-                ["CrosshairEnabled"] = s.CrosshairEnabled,
+                ["CrosshairEnabled"] = s.CrosshairEnabled && !_adsIsHidingCrosshair,
                 ["CrosshairShapeIndex"] = s.CrosshairShapeIndex,
                 ["CrosshairColorIndex"] = s.CrosshairColorIndex,
                 ["CrosshairSize"] = s.CrosshairSize,

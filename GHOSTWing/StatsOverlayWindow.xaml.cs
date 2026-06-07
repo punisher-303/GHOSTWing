@@ -19,6 +19,8 @@ namespace GHOSTWing
 
             txtVerticalPull.FontSize = size;
             txtDelay.FontSize = size;
+            lblVP.FontSize = size;
+            lblDL.FontSize = size;
 
             this.Left = x;
             this.Top = y;
@@ -26,8 +28,8 @@ namespace GHOSTWing
 
         public void UpdateStats(double verticalPull, int delayMs)
         {
-            txtVerticalPull.Text = $"VP: {verticalPull:F2}";
-            txtDelay.Text = $"DL: {delayMs}ms";
+            txtVerticalPull.Text = $"{verticalPull:F2}";
+            txtDelay.Text = $"{delayMs}ms";
         }
     }
 }

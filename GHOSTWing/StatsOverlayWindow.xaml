@@ -5,17 +5,37 @@
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         Topmost="True" ShowInTaskbar="False" IsHitTestVisible="False">
     <Grid x:Name="MainGrid">
-        <StackPanel x:Name="StatsPanel" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="0">
-            <TextBlock x:Name="txtVerticalPull" Text="VP: 0.00" Foreground="Red" FontSize="12" FontWeight="Black">
-                <TextBlock.Effect>
-                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
-                </TextBlock.Effect>
-            </TextBlock>
-            <TextBlock x:Name="txtDelay" Text="DL: 0ms" Foreground="Red" FontSize="12" FontWeight="Black" Margin="0,2,0,0">
-                <TextBlock.Effect>
-                    <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
-                </TextBlock.Effect>
-            </TextBlock>
-        </StackPanel>
+        <Border x:Name="StatsContainer" 
+                HorizontalAlignment="Left" 
+                VerticalAlignment="Top" 
+                Padding="6,4" 
+                CornerRadius="6" 
+                Background="#20000000" 
+                BorderThickness="1" 
+                BorderBrush="White">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock x:Name="lblVP" Text="VP: " Foreground="White" FontSize="11" FontWeight="Bold">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+                <TextBlock x:Name="txtVerticalPull" Text="0.00" Foreground="Red" FontSize="11" FontWeight="Black" Margin="0,0,10,0">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+                
+                <TextBlock x:Name="lblDL" Text="DL: " Foreground="White" FontSize="11" FontWeight="Bold">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+                <TextBlock x:Name="txtDelay" Text="0ms" Foreground="Red" FontSize="11" FontWeight="Black">
+                    <TextBlock.Effect>
+                        <DropShadowEffect BlurRadius="4" ShadowDepth="0" Color="Black" Opacity="0.8"/>
+                    </TextBlock.Effect>
+                </TextBlock>
+            </StackPanel>
+        </Border>
     </Grid>
 </Window>

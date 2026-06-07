@@ -7,9 +7,15 @@
     mc:Ignorable="d"
     Background="Transparent">
 
-    <Grid IsHitTestVisible="False">
+    <Grid x:Name="RootGrid">
+        <!-- SETTINGS PANEL (Only visible/clickable when Game Bar is open) -->
+        <StackPanel HorizontalAlignment="Right" VerticalAlignment="Top" Margin="10">
+            <Button x:Name="btnCenterFullscreen" Content="Center &amp; Fullscreen" Background="#20FFFFFF" Foreground="White" BorderBrush="#50FFFFFF" BorderThickness="1" Padding="10,5" Click="btnCenterFullscreen_Click" />
+        </StackPanel>
+
         <!-- STATS OVERLAY -->
         <Border x:Name="StatsContainer" 
+                IsHitTestVisible="False"
                 Visibility="Collapsed" 
                 HorizontalAlignment="Left" 
                 VerticalAlignment="Top" 
@@ -17,33 +23,34 @@
                 CornerRadius="6" 
                 Background="#20000000" 
                 BorderThickness="1" 
-                BorderBrush="#30FFFFFF">
+                BorderBrush="White">
             <StackPanel Orientation="Horizontal">
-                <TextBlock Text="VP: " Foreground="#71717A" FontSize="11" FontWeight="Bold"/>
+                <TextBlock Text="VP: " Foreground="White" FontSize="11" FontWeight="Bold"/>
                 <TextBlock x:Name="txtVP" Text="1.25" Foreground="Lime" FontSize="11" FontWeight="Black" Margin="0,0,10,0"/>
                 
-                <TextBlock Text="DL: " Foreground="#71717A" FontSize="11" FontWeight="Bold"/>
+                <TextBlock Text="DL: " Foreground="White" FontSize="11" FontWeight="Bold"/>
                 <TextBlock x:Name="txtDL" Text="5ms" Foreground="Lime" FontSize="11" FontWeight="Black"/>
             </StackPanel>
         </Border>
 
         <!-- CROSSHAIR OVERLAY -->
-        <Canvas x:Name="CrosshairCanvas" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
+        <Canvas x:Name="CrosshairCanvas" IsHitTestVisible="False" HorizontalAlignment="Center" VerticalAlignment="Center" Visibility="Collapsed">
             <!-- Dynamically populated by code-behind -->
         </Canvas>
 
         <!-- TOAST NOTIFICATION -->
         <Border x:Name="ToastContainer"
+                IsHitTestVisible="False"
                 Visibility="Collapsed"
                 HorizontalAlignment="Center"
-                VerticalAlignment="Bottom"
-                Margin="0,0,0,50"
-                Padding="15,8"
-                CornerRadius="8"
-                Background="#D0000000"
+                VerticalAlignment="Center"
+                Margin="0,200,0,0"
+                Padding="15,5"
+                CornerRadius="15"
+                Background="#B3000000"
                 BorderThickness="1"
-                BorderBrush="#10B981">
-            <TextBlock x:Name="txtToast" Text="Notification" Foreground="#FAFAFA" FontSize="14" FontWeight="Bold" />
+                BorderBrush="#D32F2F">
+            <TextBlock x:Name="txtToast" Text="Notification" Foreground="White" FontSize="14" FontWeight="Bold" />
         </Border>
     </Grid>
 </Page>
