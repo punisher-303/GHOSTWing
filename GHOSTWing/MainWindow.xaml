@@ -1194,6 +1194,20 @@
                                                         <ToggleButton Grid.Column="1" Name="chkStartMinimized" Style="{StaticResource StreamerToggleStyle}" Click="SettingChanged_Click"/>
                                                     </Grid>
 
+                                                    <Border BorderBrush="#27272A" BorderThickness="0,1,0,0" Margin="0,10"/>
+
+                                                    <Grid Margin="0,5">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*"/>
+                                                            <ColumnDefinition Width="Auto"/>
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel>
+                                                            <TextBlock Text="Pause Recoil on Menus" Foreground="#FAFAFA" FontSize="12" FontWeight="SemiBold"/>
+                                                            <TextBlock Text="Stop pulling down when mouse pointer is visible." Foreground="#71717A" FontSize="10" TextWrapping="Wrap" Margin="0,2,20,0"/>
+                                                        </StackPanel>
+                                                        <ToggleButton Grid.Column="1" Name="chkPauseRecoil" Style="{StaticResource StreamerToggleStyle}" Click="SettingChanged_Click"/>
+                                                    </Grid>
+
                                                 </StackPanel>
                                             </GroupBox>
 

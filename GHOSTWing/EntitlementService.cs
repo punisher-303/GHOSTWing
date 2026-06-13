@@ -97,8 +97,9 @@ namespace GHOSTWing
 
                 if (users == null || users.Count == 0)
                 {
-                    await RegisterNewUser(uuid);
-                    return await FetchEntitlements(uuid);
+                    bool registered = await RegisterNewUser(uuid);
+                    if (registered) return await FetchEntitlements(uuid);
+                    else return GetDefaultTrial(uuid);
                 }
 
                 var userData = users[0];
@@ -334,24 +335,42 @@ namespace GHOSTWing
             return ent;
         }
 
-        private async Task RegisterNewUser(string uuid)
+        private async Task<bool> RegisterNewUser(string uuid)
         {
-            var newUser = new
+            try
             {
-                uuid = uuid,
-                username = "GHOST GUEST",
-                plan_id = 1,
-                is_vip = false,
-                purchase_date = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                expiry_date = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                tabs = MasterTabs,
-                features = MasterFeatures,
-                maintenance = MasterMaintenance,
-                access = false,
-                last_seen = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
-            };
-            await client.PostAsync($"{SupabaseUrl}/rest/v1/user_access", 
-                new StringContent(JsonSerializer.Serialize(newUser), Encoding.UTF8, "application/json"));
+                var newUser = new
+                {
+                    uuid = uuid,
+                    username = "GHOST GUEST",
+                    plan_id = 1,
+                    is_vip = false,
+                    purchase_date = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                    expiry_date = DateTime.UtcNow.AddDays(1).ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                    tabs = MasterTabs,
+                    features = MasterFeatures,
+                    maintenance = MasterMaintenance,
+                    access = false,
+                    last_seen = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+                };
+                
+                var request = new HttpRequestMessage(HttpMethod.Post, $"{SupabaseUrl}/rest/v1/user_access");
+                request.Content = new StringContent(JsonSerializer.Serialize(newUser), Encoding.UTF8, "application/json");
+                request.Headers.Add("Prefer", "return=representation");
+                
+                var response = await client.SendAsync(request);
+                if (!response.IsSuccessStatusCode)
+                {
+                    string error = await response.Content.ReadAsStringAsync();
+                    System.Diagnostics.Debug.WriteLine($"Supabase Push Error: {error}");
+                    return false;
+                }
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         private UserEntitlements GetDefaultTrial(string uuid)

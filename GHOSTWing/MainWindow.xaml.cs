@@ -271,9 +271,12 @@ namespace GHOSTWing
                 txtToggleShortcut.Text = string.IsNullOrEmpty(settingsManager.Settings.ToggleShortcut) ? "None" : settingsManager.Settings.ToggleShortcut;
                 
                 // Sync Toggle Buttons in Settings
-                chkRunOnStartup.IsChecked = settingsManager.Settings.RunOnStartup;
-                chkMinimizeToTray.IsChecked = settingsManager.Settings.MinimizeToTray;
-                chkStartMinimized.IsChecked = settingsManager.Settings.StartMinimized;
+                var s = settingsManager.Settings;
+                if (chkRunOnStartup != null) chkRunOnStartup.IsChecked = s.RunOnStartup;
+                if (chkMinimizeToTray != null) chkMinimizeToTray.IsChecked = s.MinimizeToTray;
+                if (chkStartMinimized != null) chkStartMinimized.IsChecked = s.StartMinimized;
+                if (chkPauseRecoil != null) chkPauseRecoil.IsChecked = s.PauseRecoilWhenCursorVisible;
+                if (comboPriority != null) comboPriority.Text = s.PriorityClass;
 
                 if (settingsManager.Settings.UseGameBarOverlay) rbOverlayGameBar.IsChecked = true;
                 else rbOverlayDesktop.IsChecked = true;
@@ -286,7 +289,6 @@ namespace GHOSTWing
                 btnStreamerMode.IsChecked = settingsManager.Settings.IsStreamerMode;
                 UpdateStreamerMode(settingsManager.Settings.IsStreamerMode);
 
-                var s = settingsManager.Settings;
                 if (s.ActivationMode == "LeftOnly")
                 {
                     rbModeLeftOnly.IsChecked = true;
@@ -1581,6 +1583,11 @@ namespace GHOSTWing
             if (_isInitializing || settingsManager == null) return;
             var s = settingsManager.Settings;
 
+            if (chkRunOnStartup != null) s.RunOnStartup = chkRunOnStartup.IsChecked == true;
+            if (chkMinimizeToTray != null) s.MinimizeToTray = chkMinimizeToTray.IsChecked == true;
+            if (chkStartMinimized != null) s.StartMinimized = chkStartMinimized.IsChecked == true;
+            if (chkPauseRecoil != null) s.PauseRecoilWhenCursorVisible = chkPauseRecoil.IsChecked == true;
+
             if (rbOverlayDesktop != null && rbOverlayGameBar != null)
             {
                 s.UseGameBarOverlay = rbOverlayGameBar.IsChecked == true;
@@ -1907,7 +1914,8 @@ namespace GHOSTWing
                         shouldActivate = leftPressed;
 
                     // Only activate if buttons are pressed AND mouse cursor is hidden (in-game)
-                    if (shouldActivate && !isCursorVisible)
+                    bool pauseRecoil = settingsManager.Settings.PauseRecoilWhenCursorVisible;
+                    if (shouldActivate && (!pauseRecoil || !isCursorVisible))
                     {
                         {
                             // --- MANUAL RECOIL CONFIGURATION ---

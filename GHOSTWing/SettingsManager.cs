@@ -21,6 +21,7 @@ namespace GHOSTWing
         // Engine & UX
         public bool ShowOnScreenHUD { get; set; } = true;
         public bool UseGameBarOverlay { get; set; } = false;
+        public bool PauseRecoilWhenCursorVisible { get; set; } = true;
         public string ActivationMode { get; set; } = "RightAndLeft";
         public string LastSelectedPreset { get; set; } = "";
         
