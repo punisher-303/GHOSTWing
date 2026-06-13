@@ -163,6 +163,14 @@ namespace GHOSTWing
         {
             if (nCode >= 0)
             {
+                var mouseHookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
+                
+                // IGNORE INJECTED EVENTS (e.g. from our own SendInput) to prevent hook timeout/lag loops
+                if ((mouseHookStruct.flags & 0x01) != 0) // LLMHF_INJECTED
+                {
+                    return CallNextHookEx(_mouseHookID, nCode, wParam, lParam);
+                }
+
                 int msg = (int)wParam;
 
                 // Track button states for the recoil engine
@@ -174,7 +182,6 @@ namespace GHOSTWing
                 // Track physical movement deltas
                 if (msg == 0x0200) // WM_MOUSEMOVE
                 {
-                    var mouseHookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
                     UpdatePhysicalDelta(mouseHookStruct.pt.x, mouseHookStruct.pt.y);
                 }
                 
@@ -184,7 +191,6 @@ namespace GHOSTWing
                     if (msg == WM_MBUTTONDOWN) buttonName = "MButton";
                     if (msg == WM_XBUTTONDOWN)
                     {
-                        var mouseHookStruct = Marshal.PtrToStructure<MSLLHOOKSTRUCT>(lParam);
                         uint xButton = (mouseHookStruct.mouseData >> 16) & 0xFFFF;
                         if (xButton == 1) buttonName = "XButton1";
                         if (xButton == 2) buttonName = "XButton2";

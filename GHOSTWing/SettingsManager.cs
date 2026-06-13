@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace GHOSTWing
 {
@@ -88,11 +89,23 @@ namespace GHOSTWing
             }
         }
 
+        private readonly object _saveLock = new object();
+
         public void Save()
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
-            string json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(FilePath, json);
+            Task.Run(() =>
+            {
+                lock (_saveLock)
+                {
+                    try
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(FilePath)!);
+                        string json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
+                        File.WriteAllText(FilePath, json);
+                    }
+                    catch { }
+                }
+            });
         }
     }
 }
